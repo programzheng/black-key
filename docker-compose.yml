@@ -1,0 +1,37 @@
+version: '3'
+
+services:
+    #api
+    api:
+      build:
+        context: .
+        dockerfile: ./Dockerfile
+        args:
+          - WORKSPACE=${WORKSPACE}
+      restart: always
+      env_file:
+        - .env
+      volumes:
+        - ${DATA_PATH_HOST}/${WORKSPACE}/${APP_NAME}/upload:/${WORKSPACE}/upload
+        - ${DATA_PATH_HOST}/${WORKSPACE}/${APP_NAME}/log:/${WORKSPACE}/log
+      ports:
+        - ${LOCAL_PORT}:${APP_PORT}
+      networks:
+        - backend
+
+    #socketio
+    # socketio:
+    #   build:
+    #     context: .
+    #     dockerfile: ./Dockerfile.socketio
+    #     args:
+    #       - WORKSPACE=socketio
+    #   restart: always
+    #   volumes:
+    #     - ${DATA_PATH_HOST}/socketio/${APP_NAME}/upload:/socketio/upload
+    #     - ${DATA_PATH_HOST}/socketio/${APP_NAME}/log:/socketio/log
+    #   networks:
+    #     - backend
+networks:
+  backend:
+    external: true
