@@ -38,8 +38,9 @@ type LinePostBackAction struct {
 }
 
 type LineBotPushMessage struct {
-	Token string `json:"token"`
-	Text  string `json:"text"`
+	PushID string `json:"pushId"`
+	Token  string `json:"token"`
+	Text   string `json:"text"`
 }
 
 var botClient = SetLineBot()

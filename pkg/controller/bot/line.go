@@ -96,7 +96,13 @@ func LinePush(ctx *gin.Context) {
 		helper.Unauthorized(ctx, nil)
 		return
 	}
-	bot.LinePushMessage(viper.Get("LINE_DEFAULT_PUSH_ID").(string), template.Text(pushMessage.Text))
+	pushId := viper.Get("LINE_DEFAULT_PUSH_ID").(string)
+
+	if pushMessage.PushID != "" {
+		pushId = pushMessage.PushID
+	}
+
+	bot.LinePushMessage(pushId, template.Text(pushMessage.Text))
 }
 
 func defaultTemplateMessage() *linebot.TemplateMessage {
