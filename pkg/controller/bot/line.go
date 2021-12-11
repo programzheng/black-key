@@ -84,9 +84,9 @@ func LineWebHook(ctx *gin.Context) {
 	}
 }
 
-var pushMessage bot.LineBotPushMessage
-
 func LinePush(ctx *gin.Context) {
+	var pushMessage bot.LineBotPushMessage
+
 	if err := ctx.BindJSON(&pushMessage); err != nil {
 		helper.BadRequest(ctx, err)
 		return
