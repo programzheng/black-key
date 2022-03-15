@@ -1,6 +1,6 @@
 # black-key
-串接Line messaging api，執行各項功能
-## 執行
+this project is with line messaging api, used to implement reply programing messages or push messages to line user
+## run
 ### go
 ```shell
 go run .
@@ -9,6 +9,6 @@ go run .
 ```shell
 docker-compose up -d api
 ```
-## TODO List
-- [x] Line Bot群組分帳機器人
-- [x] Line Bot單獨User Job 發送訊息通知
+## TODO
+- [x] Line bot group split the bill
+- [x] Line bot push user job message to specific user
