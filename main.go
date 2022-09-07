@@ -36,7 +36,7 @@ func Run() error {
 	}
 	route := gin.Default()
 	router.SetRouter(route)
-	port := config.Cfg.GetString("APP_PORT")
+	port := config.Cfg.GetString("PORT")
 	if port != "" {
 		return route.Run(":" + port)
 	}
