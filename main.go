@@ -16,9 +16,9 @@ limitations under the License.
 package main
 
 import (
-	"black-key/config"
+	"github.com/programzheng/black-key/config"
 
-	"black-key/pkg/router"
+	"github.com/programzheng/black-key/pkg/router"
 
 	"github.com/bamzi/jobrunner"
 	"github.com/gin-gonic/gin"

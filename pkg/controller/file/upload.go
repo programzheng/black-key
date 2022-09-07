@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"path/filepath"
 
-	"black-key/pkg/filesystem"
-	"black-key/pkg/helper"
-	"black-key/pkg/service/file"
+	"github.com/programzheng/black-key/pkg/filesystem"
+	"github.com/programzheng/black-key/pkg/helper"
+	"github.com/programzheng/black-key/pkg/service/file"
 
 	"github.com/gin-gonic/gin"
 )

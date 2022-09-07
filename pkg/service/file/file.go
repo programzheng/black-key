@@ -1,7 +1,7 @@
 package file
 
 import (
-	"black-key/pkg/model/file"
+	"github.com/programzheng/black-key/pkg/model/file"
 
 	"github.com/jinzhu/copier"
 )

@@ -1,8 +1,8 @@
 package router
 
 import (
-	"black-key/pkg/controller/file"
-	"black-key/pkg/controller/job"
+	"github.com/programzheng/black-key/pkg/controller/file"
+	"github.com/programzheng/black-key/pkg/controller/job"
 
 	"github.com/gin-gonic/gin"
 )

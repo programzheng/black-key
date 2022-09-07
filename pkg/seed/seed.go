@@ -1,7 +1,7 @@
 package seed
 
 import (
-	"black-key/pkg/model"
+	"github.com/programzheng/black-key/pkg/model"
 )
 
 func All() {

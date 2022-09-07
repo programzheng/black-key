@@ -1,18 +1,19 @@
 package bot
 
 import (
-	"black-key/config"
-	"black-key/pkg/cache"
-	"black-key/pkg/helper"
-	"black-key/pkg/library/line/bot/template"
-	"black-key/pkg/model"
-	"black-key/pkg/model/bot"
-	"black-key/pkg/service/billing"
 	"context"
 	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
+
+	"github.com/programzheng/black-key/config"
+	"github.com/programzheng/black-key/pkg/cache"
+	"github.com/programzheng/black-key/pkg/helper"
+	"github.com/programzheng/black-key/pkg/library/line/bot/template"
+	"github.com/programzheng/black-key/pkg/model"
+	"github.com/programzheng/black-key/pkg/model/bot"
+	"github.com/programzheng/black-key/pkg/service/billing"
 
 	underscore "github.com/ahl5esoft/golang-underscore"
 	"github.com/line/line-bot-sdk-go/linebot"

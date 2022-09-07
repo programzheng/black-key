@@ -3,8 +3,8 @@ package billing
 import (
 	"time"
 
-	"black-key/pkg/model/billing"
-	"black-key/pkg/service"
+	"github.com/programzheng/black-key/pkg/model/billing"
+	"github.com/programzheng/black-key/pkg/service"
 
 	"github.com/jinzhu/copier"
 )

@@ -7,11 +7,11 @@ import (
 
 	log "github.com/sirupsen/logrus"
 
-	"black-key/config"
-	"black-key/pkg/helper"
-	"black-key/pkg/job/line"
-	"black-key/pkg/model/bot"
-	"black-key/pkg/service/billing"
+	"github.com/programzheng/black-key/config"
+	"github.com/programzheng/black-key/pkg/helper"
+	"github.com/programzheng/black-key/pkg/job/line"
+	"github.com/programzheng/black-key/pkg/model/bot"
+	"github.com/programzheng/black-key/pkg/service/billing"
 
 	"github.com/bamzi/jobrunner"
 	"github.com/line/line-bot-sdk-go/linebot"

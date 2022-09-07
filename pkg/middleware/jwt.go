@@ -4,7 +4,7 @@ import (
 	"errors"
 	"strings"
 
-	"black-key/pkg/helper"
+	"github.com/programzheng/black-key/pkg/helper"
 
 	"github.com/gin-gonic/gin"
 )

@@ -3,10 +3,10 @@ package admin
 import (
 	"errors"
 
-	"black-key/config"
-	"black-key/pkg/helper"
-	"black-key/pkg/service/admin"
-	"black-key/pkg/service/auth"
+	"github.com/programzheng/black-key/config"
+	"github.com/programzheng/black-key/pkg/helper"
+	"github.com/programzheng/black-key/pkg/service/admin"
+	"github.com/programzheng/black-key/pkg/service/auth"
 
 	"github.com/gin-gonic/gin"
 )

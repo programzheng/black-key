@@ -1,9 +1,9 @@
 package bot
 
 import (
-	"black-key/pkg/model/bot"
-	"black-key/pkg/service"
-	"black-key/pkg/service/billing"
+	"github.com/programzheng/black-key/pkg/model/bot"
+	"github.com/programzheng/black-key/pkg/service"
+	"github.com/programzheng/black-key/pkg/service/billing"
 
 	"github.com/jinzhu/copier"
 )

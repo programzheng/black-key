@@ -3,9 +3,9 @@ package file
 import (
 	"time"
 
-	"black-key/pkg/filesystem"
-	"black-key/pkg/helper"
-	"black-key/pkg/model"
+	"github.com/programzheng/black-key/pkg/filesystem"
+	"github.com/programzheng/black-key/pkg/helper"
+	"github.com/programzheng/black-key/pkg/model"
 
 	"github.com/jinzhu/gorm"
 )

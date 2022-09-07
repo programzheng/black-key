@@ -1,8 +1,9 @@
 package filesystem
 
 import (
-	"black-key/config"
 	"mime/multipart"
+
+	"github.com/programzheng/black-key/config"
 
 	"github.com/gin-gonic/gin"
 )

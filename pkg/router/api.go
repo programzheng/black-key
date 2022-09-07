@@ -3,10 +3,10 @@ package router
 import (
 	"github.com/gin-gonic/gin"
 
-	"black-key/pkg/controller/admin"
-	"black-key/pkg/controller/auth"
-	"black-key/pkg/controller/file"
-	"black-key/pkg/middleware"
+	"github.com/programzheng/black-key/pkg/controller/admin"
+	"github.com/programzheng/black-key/pkg/controller/auth"
+	"github.com/programzheng/black-key/pkg/controller/file"
+	"github.com/programzheng/black-key/pkg/middleware"
 )
 
 func setAPIRoute(router *gin.Engine) {

@@ -1,8 +1,8 @@
 package bot
 
 import (
-	"black-key/pkg/model"
-	"black-key/pkg/model/billing"
+	"github.com/programzheng/black-key/pkg/model"
+	"github.com/programzheng/black-key/pkg/model/billing"
 
 	"github.com/jinzhu/gorm"
 )

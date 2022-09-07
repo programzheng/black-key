@@ -1,12 +1,13 @@
 package cache
 
 import (
-	"black-key/config"
-	_ "black-key/config"
-	"black-key/pkg/helper"
 	"crypto/tls"
 	"log"
 	"strconv"
+
+	"github.com/programzheng/black-key/config"
+	_ "github.com/programzheng/black-key/config"
+	"github.com/programzheng/black-key/pkg/helper"
 
 	"github.com/go-redis/redis/v8"
 )

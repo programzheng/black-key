@@ -1,7 +1,7 @@
 package billing
 
 import (
-	"black-key/pkg/model"
+	"github.com/programzheng/black-key/pkg/model"
 
 	"github.com/jinzhu/gorm"
 )

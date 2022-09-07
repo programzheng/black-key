@@ -1,8 +1,8 @@
 package model
 
 import (
-	"black-key/config"
-	_ "black-key/config"
+	"github.com/programzheng/black-key/config"
+	_ "github.com/programzheng/black-key/config"
 
 	"fmt"
 

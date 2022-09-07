@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"black-key/pkg/library/line/bot/template"
+	"github.com/programzheng/black-key/pkg/library/line/bot/template"
 
 	"github.com/line/line-bot-sdk-go/linebot"
 )

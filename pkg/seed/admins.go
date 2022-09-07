@@ -1,8 +1,8 @@
 package seed
 
 import (
-	"black-key/pkg/helper"
-	"black-key/pkg/model/admin"
+	"github.com/programzheng/black-key/pkg/helper"
+	"github.com/programzheng/black-key/pkg/model/admin"
 
 	"github.com/jinzhu/gorm"
 )

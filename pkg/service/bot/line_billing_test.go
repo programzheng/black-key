@@ -5,8 +5,8 @@ import (
 	"strings"
 	"testing"
 
-	"black-key/config"
-	"black-key/pkg/helper"
+	"github.com/programzheng/black-key/config"
+	"github.com/programzheng/black-key/pkg/helper"
 
 	underscore "github.com/ahl5esoft/golang-underscore"
 )

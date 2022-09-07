@@ -1,10 +1,10 @@
 package auth
 
 import (
-	"black-key/pkg/model/auth"
+	"github.com/programzheng/black-key/pkg/model/auth"
 )
 
-//Login is vaildation struct
+// Login is vaildation struct
 type Login struct {
 	Account  string `json:"account" binding:"required"`
 	Password string `json:"password" binding:"required"`

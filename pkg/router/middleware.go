@@ -1,7 +1,7 @@
 package router
 
 import (
-	"black-key/pkg/middleware"
+	"github.com/programzheng/black-key/pkg/middleware"
 
 	"github.com/gin-gonic/gin"
 )

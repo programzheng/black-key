@@ -1,10 +1,11 @@
 package filesystem
 
 import (
-	"black-key/config"
 	"mime/multipart"
 	"os"
 	"path/filepath"
+
+	"github.com/programzheng/black-key/config"
 
 	log "github.com/sirupsen/logrus"
 
