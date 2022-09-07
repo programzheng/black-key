@@ -5,10 +5,10 @@ import (
 	"strings"
 	"testing"
 
+	"black-key/config"
 	"black-key/pkg/helper"
 
 	underscore "github.com/ahl5esoft/golang-underscore"
-	"github.com/spf13/viper"
 )
 
 func TestAdd(t *testing.T) {
@@ -94,7 +94,7 @@ func TestGetDistinctByUserIDAndLineMember(t *testing.T) {
 
 func TestGetLineBillingList(t *testing.T) {
 	var testGroupID string
-	testGroupID = viper.Get("TEST_GET_LINE_BILLING_LIST_GROUP_ID").(string)
+	testGroupID = config.Cfg.GetString("TEST_GET_LINE_BILLING_LIST_GROUP_ID")
 	lb := LineBilling{}
 	where := make(map[string]interface{})
 	not := make(map[string]interface{})
@@ -140,7 +140,7 @@ func TestGetLineBillingList(t *testing.T) {
 
 func TestGetLineBillingListTemplateText(t *testing.T) {
 	var testGroupID string
-	testGroupID = viper.Get("TEST_GET_LINE_BILLING_LIST_GROUP_ID").(string)
+	testGroupID = config.Cfg.GetString("TEST_GET_LINE_BILLING_LIST_GROUP_ID")
 	lb := LineBilling{}
 	where := make(map[string]interface{})
 	where["group_id"] = testGroupID

@@ -1,6 +1,7 @@
 package model
 
 import (
+	"black-key/config"
 	_ "black-key/config"
 
 	"fmt"
@@ -9,7 +10,6 @@ import (
 
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/mysql"
-	"github.com/spf13/viper"
 )
 
 var (
@@ -20,13 +20,13 @@ func init() {
 	var err error
 	//?parseTime=true for the database table column type is TIMESTAMP
 	setting := fmt.Sprintf("%v:%v@tcp(%v:%v)/%v?loc=Local&parseTime=true",
-		viper.Get("DB_USERNAME").(string),
-		viper.Get("DB_PASSWORD").(string),
-		viper.Get("DB_HOST").(string),
-		viper.Get("DB_PORT").(string),
-		viper.Get("DB_DATABASE"))
+		config.Cfg.GetString("DB_USERNAME"),
+		config.Cfg.GetString("DB_PASSWORD"),
+		config.Cfg.GetString("DB_HOST"),
+		config.Cfg.GetString("DB_PORT"),
+		config.Cfg.GetString("DB_DATABASE"))
 	fmt.Printf("connect: %v database\n", setting)
-	DB, err = gorm.Open(viper.Get("DB_CONNECTION").(string), setting)
+	DB, err = gorm.Open(config.Cfg.GetString("DB_CONNECTION"), setting)
 
 	if err != nil {
 		log.Println("DataBase error:", err)

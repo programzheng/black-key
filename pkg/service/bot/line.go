@@ -7,6 +7,7 @@ import (
 
 	log "github.com/sirupsen/logrus"
 
+	"black-key/config"
 	"black-key/pkg/helper"
 	"black-key/pkg/job/line"
 	"black-key/pkg/model/bot"
@@ -14,7 +15,6 @@ import (
 
 	"github.com/bamzi/jobrunner"
 	"github.com/line/line-bot-sdk-go/linebot"
-	"github.com/spf13/viper"
 )
 
 type LineBotRequest struct {
@@ -46,8 +46,8 @@ type LineBotPushMessage struct {
 var botClient = SetLineBot()
 
 func SetLineBot() *linebot.Client {
-	channelSecret := viper.Get("LINE_CHANNEL_SECRET").(string)
-	channelAccessToken := viper.Get("LINE_CHANNEL_ACCESS_TOKEN").(string)
+	channelSecret := config.Cfg.GetString("LINE_CHANNEL_SECRET")
+	channelAccessToken := config.Cfg.GetString("LINE_CHANNEL_ACCESS_TOKEN")
 	botClient, err := linebot.New(channelSecret, channelAccessToken)
 	if err != nil {
 		log.Println("LINE bot error:", err)

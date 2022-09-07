@@ -1,10 +1,10 @@
 package filesystem
 
 import (
+	"black-key/config"
 	"mime/multipart"
 
 	"github.com/gin-gonic/gin"
-	"github.com/spf13/viper"
 )
 
 type FileSystem interface {
@@ -18,12 +18,12 @@ type FileSystem interface {
 var Driver FileSystem
 
 func init() {
-	system := viper.Get("FILESYSTEM_DRIVER").(string)
+	system := config.Cfg.GetString("FILESYSTEM_DRIVER")
 	switch system {
 	case "local":
 		Driver = Local{
-			System: viper.Get("FILESYSTEM_DRIVER").(string),
-			Path:   viper.Get("FILESYSTEM_LOCAL_PATH").(string),
+			System: config.Cfg.GetString("FILESYSTEM_DRIVER"),
+			Path:   config.Cfg.GetString("FILESYSTEM_LOCAL_PATH"),
 		}
 	}
 }

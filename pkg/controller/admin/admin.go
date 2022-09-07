@@ -3,12 +3,12 @@ package admin
 import (
 	"errors"
 
+	"black-key/config"
 	"black-key/pkg/helper"
 	"black-key/pkg/service/admin"
 	"black-key/pkg/service/auth"
 
 	"github.com/gin-gonic/gin"
-	"github.com/spf13/viper"
 )
 
 var adminService admin.Admin
@@ -49,7 +49,7 @@ func Login(ctx *gin.Context) {
 		helper.Fail(ctx, errors.New("密碼錯誤"))
 		return
 	}
-	secret := []byte(viper.Get("JWT_SECRET").(string))
+	secret := []byte(config.Cfg.GetString("JWT_SECRET"))
 	token := helper.CreateJWT(secret)
 	adminLogin := auth.AdminLogin{
 		AdminID: admin.ID,

@@ -1,6 +1,7 @@
 package cache
 
 import (
+	"black-key/config"
 	_ "black-key/config"
 	"black-key/pkg/helper"
 	"crypto/tls"
@@ -8,14 +9,13 @@ import (
 	"strconv"
 
 	"github.com/go-redis/redis/v8"
-	"github.com/spf13/viper"
 )
 
 func GetRedisClient() *redis.Client {
 	var client = redis.NewClient(&redis.Options{
-		Addr:      viper.Get("REDIS_ADDR").(string),
+		Addr:      config.Cfg.GetString("REDIS_ADDR"),
 		TLSConfig: getTLSConfig(),
-		Password:  viper.Get("REDIS_PASSWORD").(string),
+		Password:  config.Cfg.GetString("REDIS_PASSWORD"),
 		DB:        getDb(),
 	})
 
@@ -23,10 +23,10 @@ func GetRedisClient() *redis.Client {
 }
 
 func getTLSConfig() *tls.Config {
-	tlsBool := helper.ConvertToBool(viper.Get("REDIS_TLS").(string))
+	tlsBool := helper.ConvertToBool(config.Cfg.GetString("REDIS_TLS"))
 	if tlsBool {
 		tlsConfig := &tls.Config{}
-		if helper.ConvertToBool(viper.Get("REDIS_TLS_SKIP_VERIFY").(string)) {
+		if helper.ConvertToBool(config.Cfg.GetString("REDIS_TLS_SKIP_VERIFY")) {
 			tlsConfig.InsecureSkipVerify = true
 			return tlsConfig
 		}
@@ -37,7 +37,7 @@ func getTLSConfig() *tls.Config {
 }
 
 func getDb() int {
-	db, err := strconv.Atoi(viper.Get("REDIS_DB").(string))
+	db, err := strconv.Atoi(config.Cfg.GetString("REDIS_DB"))
 	if err != nil {
 		log.Fatalf("cache redis getDb error:%v", err)
 	}

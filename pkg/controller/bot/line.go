@@ -3,6 +3,7 @@ package bot
 import (
 	"time"
 
+	"black-key/config"
 	"black-key/pkg/helper"
 	"black-key/pkg/library/line/bot/template"
 	"black-key/pkg/service/bot"
@@ -10,7 +11,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/line/line-bot-sdk-go/linebot"
 	log "github.com/sirupsen/logrus"
-	"github.com/spf13/viper"
 )
 
 const lineOfficalID = "Udeadbeefdeadbeefdeadbeefdeadbeef"
@@ -96,7 +96,7 @@ func LinePush(ctx *gin.Context) {
 		helper.Unauthorized(ctx, nil)
 		return
 	}
-	pushId := viper.Get("LINE_DEFAULT_PUSH_ID").(string)
+	pushId := config.Cfg.GetString("LINE_DEFAULT_PUSH_ID")
 
 	if pushMessage.PushID != "" {
 		pushId = pushMessage.PushID

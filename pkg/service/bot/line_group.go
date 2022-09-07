@@ -1,6 +1,7 @@
 package bot
 
 import (
+	"black-key/config"
 	"black-key/pkg/cache"
 	"black-key/pkg/helper"
 	"black-key/pkg/library/line/bot/template"
@@ -16,7 +17,6 @@ import (
 	underscore "github.com/ahl5esoft/golang-underscore"
 	"github.com/line/line-bot-sdk-go/linebot"
 	log "github.com/sirupsen/logrus"
-	"github.com/spf13/viper"
 )
 
 var ctx = context.Background()
@@ -162,7 +162,7 @@ func GroupParseTextGenTemplate(lineId LineID, text string) interface{} {
 		}
 
 	}
-	if helper.ConvertToBool(viper.Get("LINE_MESSAGING_DEBUG").(string)) {
+	if helper.ConvertToBool(config.Cfg.GetString("LINE_MESSAGING_DEBUG")) {
 		return linebot.NewTextMessage("目前沒有此功能")
 	}
 	return nil

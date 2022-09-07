@@ -5,7 +5,7 @@ Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
-    http://www.apache.org/licenses/LICENSE-2.0
+	http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,13 +16,12 @@ limitations under the License.
 package main
 
 import (
-	_ "black-key/config"
+	"black-key/config"
 
 	"black-key/pkg/router"
 
 	"github.com/bamzi/jobrunner"
 	"github.com/gin-gonic/gin"
-	"github.com/spf13/viper"
 )
 
 func main() {
@@ -32,14 +31,14 @@ func main() {
 
 func Run() error {
 	jobrunner.Start()
-	if env := viper.Get("APP_ENV"); env == "production" {
+	if env := config.Cfg.GetString("APP_ENV"); env == "production" {
 		gin.SetMode(gin.ReleaseMode)
 	}
 	route := gin.Default()
 	router.SetRouter(route)
-	port := viper.Get("APP_PORT")
-	if port != nil {
-		return route.Run(":" + port.(string))
+	port := config.Cfg.GetString("APP_PORT")
+	if port != "" {
+		return route.Run(":" + port)
 	}
 	return route.Run()
 }
