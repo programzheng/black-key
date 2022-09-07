@@ -2,7 +2,7 @@ version: '3'
 
 services:
     #api
-    api:
+    black-key:
       build:
         context: .
         dockerfile: ./Dockerfile
