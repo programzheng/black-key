@@ -1,6 +1,7 @@
 package billing
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/programzheng/black-key/pkg/helper"
@@ -13,7 +14,7 @@ func TestAdd(t *testing.T) {
 		Payer:  "測試",
 		Note:   "test",
 	}
-	helper.GetJSON(b)
+	fmt.Println(helper.GetJSON(b))
 
 	result, err := b.Add()
 	if err != nil {

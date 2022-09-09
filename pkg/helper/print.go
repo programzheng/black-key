@@ -20,12 +20,12 @@ func GetPostJSON(ctx *gin.Context) {
 	fmt.Printf("ctx.Request.body: %v", string(data))
 }
 
-func GetJSON(value interface{}) {
+func GetJSON(value interface{}) string {
 	result, err := json.Marshal(value)
 	if err != nil {
 		log.Fatal("helper GetJSON func:", err)
 	}
-	fmt.Println(string(result))
+	return string(result)
 }
 
 func GetGinRequest(c *gin.Context) {
