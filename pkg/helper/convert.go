@@ -2,6 +2,7 @@ package helper
 
 import (
 	"strconv"
+	"strings"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -78,4 +79,31 @@ func ConvertInterfaceToIntMap(i []interface{}) []int {
 		m[value] = i[value].(int)
 	}
 	return m
+}
+
+func ConvertStringToDateTimeString(s string) (string, error) {
+	dt := strings.Split(s, " ")
+	d := dt[0]
+	//replace all "/" to "-"
+	d = strings.ReplaceAll(d, "/", "-")
+
+	t := ""
+	if len(dt) == 1 {
+		t = "00:00:00"
+	} else {
+		t = dt[1]
+		hhmmss := strings.Split(t, ":")
+
+		switch len(hhmmss) {
+		//only hours
+		case 1:
+			t = t + ":00:00"
+		//hours and minutes
+		case 2:
+			t = t + ":00"
+		}
+	}
+
+	tt := d + " " + t
+	return tt, nil
 }

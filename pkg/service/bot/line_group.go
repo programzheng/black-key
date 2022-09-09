@@ -10,7 +10,6 @@ import (
 	"github.com/programzheng/black-key/config"
 	"github.com/programzheng/black-key/pkg/cache"
 	"github.com/programzheng/black-key/pkg/helper"
-	"github.com/programzheng/black-key/pkg/library/line/bot/template"
 	"github.com/programzheng/black-key/pkg/model"
 	"github.com/programzheng/black-key/pkg/model/bot"
 	"github.com/programzheng/black-key/pkg/service/billing"
@@ -154,11 +153,11 @@ func GroupParseTextGenTemplate(lineId LineID, text string) interface{} {
 		switch parseDate[0] {
 		case "every":
 			// TODO|every 19:55|測試29號13:30送出
-			todoAction(lineId.UserID, "every", parseDate[1], template.TODO(replyText))
+			// todoAction(lineId.UserID, "every", parseDate[1], template.TODO(replyText))
 			return linebot.NewTextMessage("設置完成將於每天" + parseDate[1] + "\n傳送訊息:" + replyText)
 		default:
 			// TODO|2020/02/29 13:00|測試29號13:30送出
-			todoAction(lineId.UserID, "once", date, template.TODO(replyText))
+			// todoAction(lineId.UserID, "once", date, template.TODO(replyText))
 			return linebot.NewTextMessage("設置完成將於" + date + "\n傳送訊息:" + replyText)
 		}
 

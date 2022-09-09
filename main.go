@@ -18,9 +18,9 @@ package main
 import (
 	"github.com/programzheng/black-key/config"
 
+	"github.com/programzheng/black-key/pkg/job"
 	"github.com/programzheng/black-key/pkg/router"
 
-	"github.com/bamzi/jobrunner"
 	"github.com/gin-gonic/gin"
 )
 
@@ -30,7 +30,7 @@ func main() {
 }
 
 func Run() error {
-	jobrunner.Start()
+	job.Run()
 	if env := config.Cfg.GetString("APP_ENV"); env == "production" {
 		gin.SetMode(gin.ReleaseMode)
 	}

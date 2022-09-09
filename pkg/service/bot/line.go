@@ -1,19 +1,16 @@
 package bot
 
 import (
+	"fmt"
 	"reflect"
-	"strings"
-	"time"
 
 	log "github.com/sirupsen/logrus"
 
 	"github.com/programzheng/black-key/config"
 	"github.com/programzheng/black-key/pkg/helper"
-	"github.com/programzheng/black-key/pkg/job/line"
 	"github.com/programzheng/black-key/pkg/model/bot"
 	"github.com/programzheng/black-key/pkg/service/billing"
 
-	"github.com/bamzi/jobrunner"
 	"github.com/line/line-bot-sdk-go/linebot"
 )
 
@@ -79,6 +76,9 @@ func LineReplyMessage(replyToken string, messages interface{}) {
 	} else {
 		sendMessages = append(sendMessages, messages.(linebot.SendingMessage))
 	}
+	if helper.ConvertToBool(config.Cfg.GetString("LINE_MESSAGING_DEBUG")) {
+		fmt.Printf("LineReplyMessage:\nreplyToken:%s\nmessages: %v\n", replyToken, helper.GetJSON(messages))
+	}
 	basicResponse, err := botClient.ReplyMessage(replyToken, sendMessages...).Do()
 	if err != nil {
 		log.Println("LINE Message API reply message Request error:", err)
@@ -86,26 +86,24 @@ func LineReplyMessage(replyToken string, messages interface{}) {
 	log.Printf("LINE Message API reply message Request response:%v\n", basicResponse)
 }
 
-func LinePushMessage(toID string, messages ...linebot.SendingMessage) {
-	botClient.PushMessage(toID, messages...).Do()
-}
-
-func todoAction(toID string, cycle string, date string, template *linebot.TextMessage) {
-	job := line.Todo{
-		BotClient: botClient,
-		ToID:      toID,
-		Template:  template,
+func LinePushMessage(toID string, messages interface{}) error {
+	var sendMessages []linebot.SendingMessage
+	rv := reflect.ValueOf(messages)
+	if rv.Kind() == reflect.Slice {
+		sendMessages = messages.([]linebot.SendingMessage)
+	} else {
+		sendMessages = append(sendMessages, messages.(linebot.SendingMessage))
 	}
-	switch cycle {
-	case "every":
-		parseTime := strings.Split(date, ":")
-		hour := parseTime[0]
-		minute := parseTime[1]
-		jobrunner.Schedule(minute+" "+hour+" * * *", job)
-	default:
-		timeRange := helper.CalcTimeRange(time.Now().Format(helper.Yyyymmddhhmmss), date)
-		jobrunner.In(time.Duration(timeRange)*time.Second, job)
+	if helper.ConvertToBool(config.Cfg.GetString("LINE_MESSAGING_DEBUG")) {
+		fmt.Printf("LinePushMessage:\ntoID: %s\nmessages: %v\n", toID, helper.GetJSON(messages))
 	}
+	response, err := botClient.PushMessage(toID, sendMessages...).Do()
+	if err != nil {
+		log.Println("pkg/service/bot/line LinePushMessage Request error:", err)
+		return err
+	}
+	log.Printf("pkg/service/bot/line LinePushMessage response:%v\n", response)
+	return nil
 }
 
 func billingAction(lineId LineID, amount int, title string, note string) (billing.Billing, bot.LineBilling) {

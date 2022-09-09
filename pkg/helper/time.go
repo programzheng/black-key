@@ -10,6 +10,14 @@ const Iso8601 = "2006-01-02"
 const Yyyymmddhhmmss = "2006/01/02 15:04:05"
 const Rfc2822 = "Mon Jan 02 15:04:05 -0700 2006"
 
+func GetNowDateTimeByFormat(format string) string {
+	if format == "" {
+		format = Yyyymmddhhmmss
+	}
+	t := time.Now()
+	return t.Format(format)
+}
+
 func CalcTimeRange(fromDate string, toDate string) int64 {
 	fromDateUnix := toUnix(fromDate)
 	toDateUnix := toUnix(toDate)
