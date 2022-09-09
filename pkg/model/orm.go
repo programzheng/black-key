@@ -3,6 +3,7 @@ package model
 import (
 	"github.com/programzheng/black-key/config"
 	_ "github.com/programzheng/black-key/config"
+	"github.com/programzheng/black-key/pkg/helper"
 
 	"fmt"
 
@@ -27,6 +28,9 @@ func init() {
 		config.Cfg.GetString("DB_DATABASE"))
 	fmt.Printf("connect: %v database\n", setting)
 	DB, err = gorm.Open(config.Cfg.GetString("DB_CONNECTION"), setting)
+	if helper.ConvertToBool(config.Cfg.GetString("DB_DEBUG")) {
+		DB.LogMode(true)
+	}
 
 	if err != nil {
 		log.Println("DataBase error:", err)
