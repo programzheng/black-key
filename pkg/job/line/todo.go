@@ -86,8 +86,9 @@ func checkCanPushLineNotification(ln *model.LineNotification) bool {
 		log.Printf("pkg/job/line/todo RunSchedule time.Parse error: %v", err)
 		return false
 	}
-	nowDateTime := time.Now()
-	return nowDateTime.After(pushDateTime)
+	minTolerantDateTime := time.Now().Add(-30 * time.Second)
+	maxTolerantDateTime := time.Now().Add(30 * time.Second)
+	return minTolerantDateTime.Before(pushDateTime) && maxTolerantDateTime.After(pushDateTime)
 }
 
 func afterPushLineNotification(ln *model.LineNotification) error {
