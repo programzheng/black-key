@@ -48,3 +48,6 @@ prune:
 
 build-image:
 	docker build -t programzheng/black-key -f Dockerfile.linux --platform linux/amd64 .
+
+push-image:
+	docker push programzheng/black-key
