@@ -65,6 +65,10 @@ func LineWebHook(ctx *gin.Context) {
 					}
 				}
 			case linebot.EventTypePostback:
+				replyTemplateMessage := bot.UserParsePostBackGenTemplate(lineId, event.Postback)
+				if replyTemplateMessage != nil {
+					bot.LineReplyMessage(event.ReplyToken, replyTemplateMessage)
+				}
 			}
 		case "group":
 			switch event.Type {

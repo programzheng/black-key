@@ -1,10 +1,12 @@
 package bot
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 
 	"github.com/line/line-bot-sdk-go/linebot"
+	log "github.com/sirupsen/logrus"
 )
 
 func UserParseTextGenTemplate(lineId LineID, text string) (interface{}, error) {
@@ -23,8 +25,25 @@ func UserParseTextGenTemplate(lineId LineID, text string) (interface{}, error) {
 			return generateErrorTextMessage(), err
 		}
 		return linebot.NewImageMessage(lineMember.PictureURL, lineMember.PictureURL), nil
+	case "所有提醒", "所有通知", "All TODO":
+		return getTodo(lineId)
 	case "提醒", "通知", "TODO":
 		return todo(lineId, text)
 	}
 	return linebot.NewTextMessage(text), nil
+}
+
+func UserParsePostBackGenTemplate(lineId LineID, postBack *linebot.Postback) interface{} {
+	data := []byte(postBack.Data)
+	lpba := LinePostBackAction{}
+	err := json.Unmarshal(data, &lpba)
+	if err != nil {
+		log.Fatalf("line group GroupParsePostBackGenTemplate json unmarshal error: %v", err)
+	}
+
+	switch lpba.Action {
+	case "delete line notification":
+		return deleteTodoByPostBack(&lpba)
+	}
+	return nil
 }
