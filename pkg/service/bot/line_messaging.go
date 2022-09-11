@@ -1,13 +1,80 @@
 package bot
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 
 	"github.com/line/line-bot-sdk-go/linebot"
 	"github.com/programzheng/black-key/pkg/helper"
 	"github.com/programzheng/black-key/pkg/model/bot"
+	log "github.com/sirupsen/logrus"
 )
+
+func getTodo(lineId LineID) (interface{}, error) {
+	lns, err := (&bot.LineNotification{}).Get(map[string]interface{}{
+		"user_id":  lineId.UserID,
+		"group_id": lineId.GroupID,
+		"room_id":  lineId.RoomID,
+	}, nil)
+	if err != nil {
+		return nil, err
+	}
+	if len(lns) == 0 {
+		return linebot.NewTextMessage("沒有資料"), nil
+	}
+	carouselColumns := []*linebot.CarouselColumn{}
+	for _, ln := range lns {
+		var tp linebot.TextMessage
+		data := []byte(ln.Template)
+		err := json.Unmarshal(data, &tp)
+		if err != nil {
+			log.Printf("pkg/service/bot/line_messaging getTodo json.Unmarshal error: %v", err)
+			return nil, err
+		}
+		pushDateTime := convertPushDateTime(ln.PushDateTime)
+		deletePostBackAction := LinePostBackAction{
+			Action: "delete line notification",
+			Data: map[string]interface{}{
+				"ID": ln.ID,
+			},
+		}
+		deletePostBackActionJson, err := json.Marshal(deletePostBackAction)
+		if err != nil {
+			log.Printf("pkg/service/bot/line_messaging getTodo deletePostBackActionJson json.Marshal error: %v", err)
+			return nil, err
+		}
+		carouselColumn := linebot.NewCarouselColumn(
+			"",
+			tp.Text,
+			fmt.Sprintf("發送時間: %s", pushDateTime),
+			linebot.NewPostbackAction(
+				"刪除",
+				string(deletePostBackActionJson),
+				"",
+				"",
+			),
+		)
+		carouselColumns = append(carouselColumns, carouselColumn)
+	}
+	carouselTemplate := linebot.NewCarouselTemplate(carouselColumns...)
+
+	return linebot.NewTemplateMessage("所有提醒", carouselTemplate), nil
+}
+
+func convertPushDateTime(pdt string) string {
+	s := strings.Split(pdt, "|")
+	if len(s) == 1 {
+		return pdt
+	}
+	period := s[0]
+	dateTime := s[1]
+	switch period {
+	case "Sunday,Monday,Tuesday,Wednesday,Thursday,Friday,Saturday":
+		return fmt.Sprintf("每天 %s", dateTime)
+	}
+	return ""
+}
 
 func todo(lineId LineID, text string) (interface{}, error) {
 	parseText := strings.Split(text, "|")
@@ -73,4 +140,20 @@ func todo(lineId LineID, text string) (interface{}, error) {
 
 		return linebot.NewTextMessage("設置完成將於" + date + "\n傳送訊息:" + replyText), nil
 	}
+}
+
+func deleteTodoByPostBack(lpba *LinePostBackAction) interface{} {
+	id := uint(lpba.Data["ID"].(float64))
+	ln, err := bot.LineNotificationFirstByID(id)
+	if err != nil {
+		return nil
+	}
+	err = ln.Delete()
+	if err != nil {
+		return linebot.NewTextMessage(
+			"刪除失敗",
+		)
+	}
+
+	return linebot.NewTextMessage("刪除成功")
 }

@@ -27,6 +27,16 @@ func (ln *LineNotification) Add() (*LineNotification, error) {
 	return ln, nil
 }
 
+func LineNotificationFirstByID(id uint) (*LineNotification, error) {
+	ln := &LineNotification{}
+	err := model.DB.First(ln, id).Error
+	if err != nil && err != gorm.ErrRecordNotFound {
+		return nil, err
+	}
+
+	return ln, nil
+}
+
 func (ln *LineNotification) Get(maps map[string]interface{}, not map[string]interface{}) ([]*LineNotification, error) {
 	var lns []*LineNotification
 	err := model.DB.Where(maps).Not(not).Find(&lns).Error

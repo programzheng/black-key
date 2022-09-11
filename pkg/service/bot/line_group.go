@@ -146,6 +146,8 @@ func GroupParseTextGenTemplate(lineId LineID, text string) (interface{}, error) 
 			log.Fatalf("set expire rock-paper-scissors time error:%v", err)
 		}
 		return rockPaperScissorsTemplate(lineId, "剪刀石頭布", minutes), nil
+	case "所有提醒", "所有通知", "All TODO":
+		return getTodo(lineId)
 	case "提醒", "通知", "TODO":
 		return todo(lineId, text)
 	}
@@ -165,6 +167,8 @@ func GroupParsePostBackGenTemplate(lineId LineID, postBack *linebot.Postback) in
 
 	lineIdMap := getLineIDMap(lineId)
 	switch lpba.Action {
+	case "delete line notification":
+		return deleteTodoByPostBack(&lpba)
 	case "結算":
 		lineUserID := lpba.Data["LineUserID"].(string)
 		if lineUserID != lineId.UserID {
