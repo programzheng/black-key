@@ -71,7 +71,10 @@ func LineWebHook(ctx *gin.Context) {
 			case linebot.EventTypeMessage:
 				switch message := event.Message.(type) {
 				case *linebot.TextMessage:
-					replyTemplateMessage := bot.GroupParseTextGenTemplate(lineId, message.Text)
+					replyTemplateMessage, err := bot.GroupParseTextGenTemplate(lineId, message.Text)
+					if err != nil {
+						log.Printf("GroupParseTextGenTemplate error: %v", err)
+					}
 					if replyTemplateMessage != nil {
 						bot.LineReplyMessage(event.ReplyToken, replyTemplateMessage)
 					}
