@@ -61,6 +61,14 @@ func (ln *LineNotification) GetByUpdatedRange(comparison string, dateTime string
 	return lns, nil
 }
 
+func (ln *LineNotification) Save() error {
+	err := model.DB.Save(ln).Error
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func (ln *LineNotification) Delete() error {
 	err := model.DB.Delete(&ln).Error
 	if err != nil {

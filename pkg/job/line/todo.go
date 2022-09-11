@@ -2,7 +2,9 @@ package line
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
+	"strings"
 	"time"
 
 	"github.com/line/line-bot-sdk-go/linebot"
@@ -25,12 +27,8 @@ func RunSchedule() {
 		log.Printf("pkg/job/line/todo RunSchedule Get error: %v", err)
 	}
 	for _, ln := range lns {
-		lnDateTime, err := time.ParseInLocation("2006-01-02 15:04:05", ln.PushDateTime, time.Now().Local().Location())
-		if err != nil {
-			log.Printf("pkg/job/line/todo RunSchedule time.Parse error: %v", err)
-		}
-		nowDateTime := time.Now()
-		if nowDateTime.Before(lnDateTime) {
+		canPush := checkCanPushLineNotification(ln)
+		if !canPush {
 			continue
 		}
 		switch ln.Type {
@@ -42,16 +40,86 @@ func RunSchedule() {
 				log.Printf("pkg/job/line/todo RunSchedule json.Unmarshal error: %v", err)
 				return
 			}
-			if ln.UserID != "" {
-				err := bot.LinePushMessage(ln.UserID, template.Text(tp.Text))
+			pushID := getPushID(ln)
+			if pushID != "" {
+				err := bot.LinePushMessage(pushID, template.Text(tp.Text))
 				if err != nil {
 					log.Printf("pkg/job/line/todo RunSchedule LinePushMessage error: %v", err)
 				}
-				err = ln.Delete()
+				err = afterPushLineNotification(ln)
 				if err != nil {
 					log.Printf("pkg/job/line/todo RunSchedule PermanentlyDelete error: %v", err)
 				}
 			}
 		}
 	}
+}
+
+func convertDateTimeToOnlyDateTimeString(dateTime string) string {
+	s := strings.Split(dateTime, "|")
+	if len(s) > 1 {
+		return s[1]
+	}
+	return dateTime
+}
+
+func convertTimeToPushDateTime(dateTime string) string {
+	s := strings.Split(dateTime, "|")
+	if len(s) > 1 {
+		//is by weekday push
+		weekDays := strings.Split(s[0], ",")
+		nt := time.Now()
+		nowWeekDay := nt.Weekday().String()
+		for _, weekDay := range weekDays {
+			if nowWeekDay == weekDay {
+				return fmt.Sprintf("%s %s", nt.Format("2006-01-02"), s[1])
+			}
+		}
+	}
+	return dateTime
+}
+
+func checkCanPushLineNotification(ln *model.LineNotification) bool {
+	dateTime := convertTimeToPushDateTime(ln.PushDateTime)
+	pushDateTime, err := time.ParseInLocation("2006-01-02 15:04:05", dateTime, time.Now().Local().Location())
+	if err != nil {
+		log.Printf("pkg/job/line/todo RunSchedule time.Parse error: %v", err)
+		return false
+	}
+	nowDateTime := time.Now()
+	return nowDateTime.After(pushDateTime)
+}
+
+func afterPushLineNotification(ln *model.LineNotification) error {
+	var err error
+
+	//Limit < 0 is unlimited
+	if ln.Limit > 0 {
+		ln.Limit -= 1
+		err := ln.Save()
+		if err != nil {
+			return err
+		}
+	}
+	if ln.Limit == 0 {
+		err = ln.Delete()
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func getPushID(ln *model.LineNotification) string {
+	if ln.RoomID != "" {
+		return ln.RoomID
+	}
+	if ln.GroupID != "" {
+		return ln.GroupID
+	}
+	if ln.UserID != "" {
+		return ln.UserID
+	}
+	return ""
 }

@@ -22,18 +22,18 @@ import (
 var ctx = context.Background()
 var rdb = cache.GetRedisClient()
 
-func GroupParseTextGenTemplate(lineId LineID, text string) interface{} {
+func GroupParseTextGenTemplate(lineId LineID, text string) (interface{}, error) {
 	parseText := strings.Split(text, "|")
 
 	//功能說明
 	if len(parseText) == 1 {
 		switch parseText[0] {
 		case "c helper", "記帳說明", "記帳":
-			return linebot.NewTextMessage("*記帳*\n將按照群組人數去做平均計算，使用記帳請使用以下格式輸入\n\"記帳|標題|總金額|備註\"\n例如:\n記帳|生日聚餐|1234|本人生日")
+			return linebot.NewTextMessage("*記帳*\n將按照群組人數去做平均計算，使用記帳請使用以下格式輸入\n\"記帳|標題|總金額|備註\"\n例如:\n記帳|生日聚餐|1234|本人生日"), nil
 		case "c list helper", "記帳列表說明":
-			return linebot.NewTextMessage("*記帳列表*\n將回傳記帳紀錄的列表，格式為:\n日期時間 標題|金額| 平均金額 |付款人|備註")
+			return linebot.NewTextMessage("*記帳列表*\n將回傳記帳紀錄的列表，格式為:\n日期時間 標題|金額| 平均金額 |付款人|備註"), nil
 		case "c balance helper", "記帳結算說明", "結算說明":
-			return linebot.NewTextMessage("*記帳結算說明*\n將刪除記帳資料，格式為:\n記帳結算|日期(可選)")
+			return linebot.NewTextMessage("*記帳結算說明*\n將刪除記帳資料，格式為:\n記帳結算|日期(可選)"), nil
 		}
 	}
 
@@ -42,7 +42,7 @@ func GroupParseTextGenTemplate(lineId LineID, text string) interface{} {
 	switch parseText[0] {
 	// Line相關資訊
 	case "資訊":
-		return linebot.NewTextMessage(fmt.Sprintf("RoomID:%v\nGroupID:%v\nUserID:%v", lineId.RoomID, lineId.GroupID, lineId.UserID))
+		return linebot.NewTextMessage(fmt.Sprintf("RoomID:%v\nGroupID:%v\nUserID:%v", lineId.RoomID, lineId.GroupID, lineId.UserID)), nil
 	// c list||記帳列表
 	case "c list", "記帳列表":
 		messages := []linebot.SendingMessage{}
@@ -50,11 +50,11 @@ func GroupParseTextGenTemplate(lineId LineID, text string) interface{} {
 		var lbs []bot.LineBilling
 		err := model.DB.Where(lineIdMap).Preload("Billing").Find(&lbs).Error
 		if err != nil {
-			log.Fatalf("Get failed: %v", err)
+			return generateErrorTextMessage(), err
 		}
 		//沒有記帳資料
 		if len(lbs) == 0 {
-			return linebot.NewTextMessage("目前沒有記帳紀錄哦！")
+			return linebot.NewTextMessage("目前沒有記帳紀錄哦！"), nil
 		}
 		dstByUserID := getDistinctByUserID(lbs)
 		listText := getLineBillingList(lineId, lbs, dstByUserID)
@@ -62,7 +62,7 @@ func GroupParseTextGenTemplate(lineId LineID, text string) interface{} {
 		totalText := getLineBillingTotalAmount(lineId, lbs, dstByUserID)
 		messages = append(messages, linebot.NewTextMessage(totalText))
 
-		return messages
+		return messages, nil
 	// c||記帳|生日聚餐|1234|本人生日
 	case "c", "記帳":
 		title := parseText[1]
@@ -75,7 +75,7 @@ func GroupParseTextGenTemplate(lineId LineID, text string) interface{} {
 		billingAction(lineId, amount, title, note)
 		amountFloat64 := helper.ConvertToFloat64(amount)
 		amountAvg, amountAvgBase := calculateAmount(lineId.GroupID, amountFloat64)
-		return linebot.NewTextMessage(title + ":記帳完成," + parseText[2] + "/" + helper.ConvertToString(int(amountAvgBase)) + " = " + "*" + helper.ConvertToString(amountAvg) + "*")
+		return linebot.NewTextMessage(title + ":記帳完成," + parseText[2] + "/" + helper.ConvertToString(int(amountAvgBase)) + " = " + "*" + helper.ConvertToString(amountAvg) + "*"), nil
 	// 記帳結算
 	case "記帳結算", "結帳", "結算":
 		messages := []linebot.SendingMessage{}
@@ -92,7 +92,7 @@ func GroupParseTextGenTemplate(lineId LineID, text string) interface{} {
 		}
 		//沒有記帳資料
 		if len(lbs) == 0 {
-			return linebot.NewTextMessage(fmt.Sprintf("%v以前沒有記帳紀錄哦！", date))
+			return linebot.NewTextMessage(fmt.Sprintf("%v以前沒有記帳紀錄哦！", date)), nil
 		}
 		dstByUserID := getDistinctByUserID(lbs)
 		listText := getLineBillingList(lineId, lbs, dstByUserID)
@@ -118,13 +118,13 @@ func GroupParseTextGenTemplate(lineId LineID, text string) interface{} {
 		confirmTemplate := linebot.NewConfirmTemplate("確定要刪除以上紀錄?", leftBtn, rightBtn)
 		messages = append(messages, linebot.NewTemplateMessage("確定要刪除以上紀錄?", confirmTemplate))
 
-		return messages
+		return messages, nil
 	case "我的大頭貼":
 		lineMember, err := botClient.GetGroupMemberProfile(lineId.GroupID, lineId.UserID).Do()
 		if err != nil {
-			return nil
+			return generateErrorTextMessage(), err
 		}
-		return linebot.NewImageMessage(lineMember.PictureURL, lineMember.PictureURL)
+		return linebot.NewImageMessage(lineMember.PictureURL, lineMember.PictureURL), nil
 	case "猜拳", "石頭布剪刀", "剪刀石頭布", "rock-paper-scissors":
 		groupMemberCount := getGroupMemberCount(lineId.GroupID)
 		// if groupMemberCount <= 1 {
@@ -135,7 +135,7 @@ func GroupParseTextGenTemplate(lineId LineID, text string) interface{} {
 		m, _ := time.ParseDuration(minutes + "m")
 		exist := rdb.Exists(ctx, key).Val()
 		if exist > 0 {
-			return rockPaperScissorsTemplate(lineId, "已有猜拳正在進行中", minutes)
+			return rockPaperScissorsTemplate(lineId, "已有猜拳正在進行中", minutes), nil
 		}
 		err := rdb.SAdd(ctx, key, groupMemberCount).Err()
 		if err != nil {
@@ -145,27 +145,14 @@ func GroupParseTextGenTemplate(lineId LineID, text string) interface{} {
 		if err != nil {
 			log.Fatalf("set expire rock-paper-scissors time error:%v", err)
 		}
-		return rockPaperScissorsTemplate(lineId, "剪刀石頭布", minutes)
-	case "TODO":
-		date := parseText[1]
-		replyText := parseText[2]
-		parseDate := strings.Split(date, " ")
-		switch parseDate[0] {
-		case "every":
-			// TODO|every 19:55|測試29號13:30送出
-			// todoAction(lineId.UserID, "every", parseDate[1], template.TODO(replyText))
-			return linebot.NewTextMessage("設置完成將於每天" + parseDate[1] + "\n傳送訊息:" + replyText)
-		default:
-			// TODO|2020/02/29 13:00|測試29號13:30送出
-			// todoAction(lineId.UserID, "once", date, template.TODO(replyText))
-			return linebot.NewTextMessage("設置完成將於" + date + "\n傳送訊息:" + replyText)
-		}
-
+		return rockPaperScissorsTemplate(lineId, "剪刀石頭布", minutes), nil
+	case "提醒", "通知", "TODO":
+		return todo(lineId, text)
 	}
 	if helper.ConvertToBool(config.Cfg.GetString("LINE_MESSAGING_DEBUG")) {
-		return linebot.NewTextMessage("目前沒有此功能")
+		return linebot.NewTextMessage("目前沒有此功能"), nil
 	}
-	return nil
+	return nil, nil
 }
 
 func GroupParsePostBackGenTemplate(lineId LineID, postBack *linebot.Postback) interface{} {

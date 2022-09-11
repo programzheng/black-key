@@ -128,3 +128,7 @@ func billingAction(lineId LineID, amount int, title string, note string) (billin
 	}
 	return b, lb
 }
+
+func generateErrorTextMessage() linebot.Message {
+	return linebot.NewTextMessage("系統錯誤，請重新再試或是通知管理員")
+}
