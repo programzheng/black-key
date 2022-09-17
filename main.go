@@ -40,5 +40,5 @@ func Run() error {
 	if port != "" {
 		return route.Run(":" + port)
 	}
-	return route.Run()
+	return route.Run(":80")
 }
