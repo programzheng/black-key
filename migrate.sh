@@ -3,4 +3,4 @@ if [ -z "$1" ]; then
     exit
 fi
 
-godotenv -f goose.env goose -dir ./migrations $1
+godotenv -f .env.goose goose -dir ./migrations $1
