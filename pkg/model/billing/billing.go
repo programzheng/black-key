@@ -3,7 +3,7 @@ package billing
 import (
 	"github.com/programzheng/black-key/pkg/model"
 
-	"github.com/jinzhu/gorm"
+	"gorm.io/gorm"
 )
 
 type Billing struct {
@@ -12,12 +12,6 @@ type Billing struct {
 	Amount int    `gorm:"comment:'總付款金額'"`
 	Payer  string `gorm:"comment:'付款人'"`
 	Note   string `gorm:"comment:'備註'"`
-}
-
-func init() {
-	if !model.DB.HasTable(&Billing{}) {
-		model.DB.CreateTable(&Billing{})
-	}
 }
 
 func (b Billing) Add() (Billing, error) {

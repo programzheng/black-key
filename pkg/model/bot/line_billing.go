@@ -4,7 +4,7 @@ import (
 	"github.com/programzheng/black-key/pkg/model"
 	"github.com/programzheng/black-key/pkg/model/billing"
 
-	"github.com/jinzhu/gorm"
+	"gorm.io/gorm"
 )
 
 type LineBilling struct {
@@ -14,12 +14,6 @@ type LineBilling struct {
 	RoomID    string
 	UserID    string `gorm:"not null"`
 	Billing   billing.Billing
-}
-
-func init() {
-	if !model.DB.HasTable(&LineBilling{}) {
-		model.DB.CreateTable(&LineBilling{})
-	}
 }
 
 func (lb LineBilling) Add() (LineBilling, error) {

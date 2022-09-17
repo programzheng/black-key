@@ -3,8 +3,8 @@ package bot
 import (
 	"fmt"
 
-	"github.com/jinzhu/gorm"
 	"github.com/programzheng/black-key/pkg/model"
+	"gorm.io/gorm"
 )
 
 type LineNotification struct {

@@ -7,7 +7,7 @@ import (
 	"github.com/programzheng/black-key/pkg/helper"
 	"github.com/programzheng/black-key/pkg/model"
 
-	"github.com/jinzhu/gorm"
+	"gorm.io/gorm"
 )
 
 type File struct {
@@ -24,12 +24,6 @@ type File struct {
 }
 
 type Files []*File
-
-func init() {
-	if !model.DB.HasTable(&File{}) {
-		model.DB.CreateTable(&File{})
-	}
-}
 
 func (f *File) AfterFind() (err error) {
 	f.Path = filesystem.Driver.GetHostURL() + "/" + f.Path + f.Name

@@ -3,7 +3,7 @@ package admin
 import (
 	"github.com/programzheng/black-key/pkg/model"
 
-	"github.com/jinzhu/gorm"
+	"gorm.io/gorm"
 )
 
 type Admin struct {
@@ -18,15 +18,6 @@ type AdminProfile struct {
 	gorm.Model
 	AdminID uint
 	Name    string
-}
-
-func init() {
-	if !model.DB.HasTable(&Admin{}) {
-		model.DB.CreateTable(&Admin{})
-	}
-	if !model.DB.HasTable(&AdminProfile{}) {
-		model.DB.CreateTable(&AdminProfile{})
-	}
 }
 
 func (a Admin) Add() (Admin, error) {

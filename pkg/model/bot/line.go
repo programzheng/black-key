@@ -3,7 +3,7 @@ package bot
 import (
 	"github.com/programzheng/black-key/pkg/model"
 
-	"github.com/jinzhu/gorm"
+	"gorm.io/gorm"
 )
 
 type LineBotRequest struct {
