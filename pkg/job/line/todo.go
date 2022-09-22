@@ -11,6 +11,7 @@ import (
 	"github.com/programzheng/black-key/pkg/library/line/bot/template"
 	model "github.com/programzheng/black-key/pkg/model/bot"
 	"github.com/programzheng/black-key/pkg/service/bot"
+	"golang.org/x/exp/slices"
 )
 
 type Todo struct {
@@ -80,12 +81,7 @@ func convertTimeToPushDateTime(dateTime string) string {
 }
 
 func checkCanPushLineNotification(ln *model.LineNotification) bool {
-	dateTime := convertTimeToPushDateTime(ln.PushDateTime)
-	pushDateTime, err := time.ParseInLocation("2006-01-02 15:04:05", dateTime, time.Now().Local().Location())
-	if err != nil {
-		log.Printf("pkg/job/line/todo RunSchedule time.Parse error: %v", err)
-		return false
-	}
+	pushDateTime := ln.PushDateTime
 	minTolerantDateTime := time.Now().Add(-30 * time.Second)
 	maxTolerantDateTime := time.Now().Add(30 * time.Second)
 	return minTolerantDateTime.Before(pushDateTime) && maxTolerantDateTime.After(pushDateTime)
@@ -102,10 +98,23 @@ func afterPushLineNotification(ln *model.LineNotification) error {
 			return err
 		}
 	}
-	if ln.Limit == 0 {
+	switch ln.Limit {
+	case 0:
 		err = ln.Delete()
 		if err != nil {
 			return err
+		}
+	case -1:
+		//push weekday is next weekday
+		nextDateTime := ln.PushDateTime.AddDate(0, 0, 1)
+		wds := nextDateTime.Weekday().String()
+		weekDayCycle := strings.Split(ln.PushCycle, ",")
+		if slices.Index(weekDayCycle, wds) != -1 {
+			ln.PushDateTime = nextDateTime
+			err := ln.Save()
+			if err != nil {
+				return err
+			}
 		}
 	}
 

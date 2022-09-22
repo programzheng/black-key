@@ -2,6 +2,7 @@ package bot
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/programzheng/black-key/pkg/model"
 	"gorm.io/gorm"
@@ -9,9 +10,10 @@ import (
 
 type LineNotification struct {
 	gorm.Model
-	Service      string `gorm:"not null"` //"Messaging API"
-	PushDateTime string `gorm:"not null"` //推播時間，YYYY-MM-DD HH:MM:SS的格式代表有指定時間
-	Limit        int    //限制次數(-1為不限制)
+	Service      string    `gorm:"not null"` //"Messaging API"
+	PushCycle    string    `gorm:"not null"` //發送週期
+	PushDateTime time.Time `gorm:"not null"` //發送時間，YYYY-MM-DD HH:MM:SS的格式代表有指定時間
+	Limit        int       //限制次數(-1為不限制)
 	UserID       string
 	GroupID      string
 	RoomID       string
