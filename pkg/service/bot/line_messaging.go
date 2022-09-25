@@ -82,9 +82,22 @@ func todo(lineId LineID, text string) (interface{}, error) {
 	date := parseText[1]
 	replyText := parseText[2]
 	parseDate := strings.Split(date, " ")
-	switch parseDate[0] {
-	// TODO|every 19:55|測試29號13:30送出
-	case "每天", "每日", "every", "every day", "every-day":
+
+	if len(parseDate) == 0 {
+		return generateErrorTextMessage(), nil
+	}
+
+	tt, err := getTimeByTimeString(parseDate[1])
+	if err != nil {
+		return generateErrorTextMessage(), err
+	}
+
+	//every day
+	if parseDate[0] == "每天" ||
+		parseDate[0] == "每日" ||
+		parseDate[0] == "every" ||
+		parseDate[0] == "every day" ||
+		parseDate[0] == "every-day" {
 		if len(parseDate) == 1 {
 			return linebot.NewTextMessage(
 				fmt.Sprintf("需設置指定時間，例如: %s 23:59:59", parseDate[0]),
@@ -96,13 +109,7 @@ func todo(lineId LineID, text string) (interface{}, error) {
 			return generateErrorTextMessage(), err
 		}
 		weekDays := strings.Join(helper.GetWeekDays(), ",")
-		dt := fmt.Sprintf("%s %s", helper.GetNowDateTimeByFormat("2006-01-02"), parseDate[1])
-		pdtl, err := time.ParseInLocation("2006-01-02 15:04:05", dt, time.Now().Local().Location())
-		if err != nil {
-			return linebot.NewTextMessage(
-				"時間格式錯誤，請重新輸入，例如:每天 23:59:59",
-			), nil
-		}
+		pdtl := *tt
 		templateJSON := string(templateJSONByte)
 		ln := &bot.LineNotification{
 			Service:      "Messaging API",
@@ -120,29 +127,31 @@ func todo(lineId LineID, text string) (interface{}, error) {
 			return generateErrorTextMessage(), err
 		}
 		return linebot.NewTextMessage("設置完成將於每天" + parseDate[1] + "\n傳送訊息:" + replyText), nil
-	// TODO|2020/02/29 13:00|測試29號13:30送出
-	default:
-		if len(parseDate) == 1 {
-			return linebot.NewTextMessage(
-				fmt.Sprintf("需設置指定時間，例如: %s 2022-01-01 23:59:59", parseDate[0]),
-			), nil
-		}
+	}
 
-		pdt, err := helper.ConvertStringToDateTimeString(date)
-		pdtl, err := time.ParseInLocation("2006-01-02 15:04:05", pdt, time.Now().Local().Location())
-		if err != nil {
-			return generateErrorTextMessage(), err
+	//specify weekday
+	wdtcs := strings.Split(parseDate[0], ",")
+	wdens := []string{}
+	for _, wdtc := range wdtcs {
+		wden := helper.GetWeekDayByTraditionalChinese(wdtc)
+		if wden == "" {
+			break
 		}
+		wdens = append(wdens, wden)
+	}
+	if len(wdens) > 0 {
 		templateJSONByte, err := linebot.NewTextMessage(replyText).MarshalJSON()
 		if err != nil {
 			return generateErrorTextMessage(), err
 		}
+		pdtl := *tt
+		weekDays := strings.Join(wdens, ",")
 		templateJSON := string(templateJSONByte)
 		ln := &bot.LineNotification{
 			Service:      "Messaging API",
-			PushCycle:    "specify",
+			PushCycle:    weekDays,
 			PushDateTime: pdtl,
-			Limit:        1,
+			Limit:        -1,
 			UserID:       lineId.UserID,
 			GroupID:      lineId.GroupID,
 			RoomID:       lineId.RoomID,
@@ -153,9 +162,71 @@ func todo(lineId LineID, text string) (interface{}, error) {
 		if err != nil {
 			return generateErrorTextMessage(), err
 		}
+		rpmg := fmt.Sprintf(
+			"設置完成將於%s%s\n傳送訊息:%s",
+			parseDate[0],
+			parseDate[1],
+			replyText,
+		)
+		return linebot.NewTextMessage(rpmg), nil
 
-		return linebot.NewTextMessage("設置完成將於" + date + "\n傳送訊息:" + replyText), nil
 	}
+
+	//specify date time
+	if len(parseDate) == 1 {
+		return linebot.NewTextMessage(
+			fmt.Sprintf("需設置指定時間，例如: %s 2022-01-01 23:59:59", parseDate[0]),
+		), nil
+	}
+	dts := fmt.Sprintf("%s %s", parseDate[0], parseDate[1])
+	dtt, err := time.ParseInLocation("2006-01-02 15:04:05", dts, time.Now().Local().Location())
+	if err != nil {
+		return generateErrorTextMessage(), err
+	}
+	ccspm := checkCanSettingPushMessage(dtt)
+	if !ccspm {
+		return linebot.NewTextMessage(
+			"請設置未來的時間",
+		), nil
+	}
+
+	pdtl := dtt
+	templateJSONByte, err := linebot.NewTextMessage(replyText).MarshalJSON()
+	if err != nil {
+		return generateErrorTextMessage(), err
+	}
+	templateJSON := string(templateJSONByte)
+	ln := &bot.LineNotification{
+		Service:      "Messaging API",
+		PushCycle:    "specify",
+		PushDateTime: pdtl,
+		Limit:        1,
+		UserID:       lineId.UserID,
+		GroupID:      lineId.GroupID,
+		RoomID:       lineId.RoomID,
+		Type:         string(linebot.MessageTypeText),
+		Template:     templateJSON,
+	}
+	_, err = ln.Add()
+	if err != nil {
+		return generateErrorTextMessage(), err
+	}
+
+	return linebot.NewTextMessage("設置完成將於" + date + "\n傳送訊息:" + replyText), nil
+
+}
+
+func getTimeByTimeString(ts string) (*time.Time, error) {
+	dt := fmt.Sprintf("%s %s", helper.GetNowDateTimeByFormat("2006-01-02"), ts)
+	pdtl, err := time.ParseInLocation("2006-01-02 15:04:05", dt, time.Now().Local().Location())
+	if err != nil {
+		return nil, err
+	}
+	return &pdtl, nil
+}
+
+func checkCanSettingPushMessage(t time.Time) bool {
+	return time.Now().Before(t)
 }
 
 func deleteTodoByPostBack(lpba *LinePostBackAction) interface{} {

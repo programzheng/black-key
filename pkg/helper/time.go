@@ -22,8 +22,8 @@ func GetWeekDays() []string {
 	}
 }
 
-func GetWeekDayByTraditionalChinese(tC string) string {
-	switch tC {
+func GetWeekDayByTraditionalChinese(traditionalChinese string) string {
+	switch traditionalChinese {
 	case "星期日", "禮拜日":
 		return GetWeekDays()[0]
 	case "星期一", "禮拜一":
@@ -57,6 +57,33 @@ func GetNowDateTimeByFormat(format string) string {
 	}
 	t := time.Now()
 	return t.Format(format)
+}
+
+func GetSpecifyNextWeekDayDateTime(wdt time.Time) time.Time {
+	snwddt := wdt.Weekday()
+	nextWeekDay := time.Now()
+	for nextWeekDay.Weekday() == snwddt {
+		nextWeekDay = nextWeekDay.AddDate(0, 0, 1)
+	}
+
+	return nextWeekDay
+}
+
+func GetSpecifyNextWeekDayDateTimeByString(wdts string) time.Time {
+	nextWeekDay := time.Now()
+	for nextWeekDay.Weekday().String() == wdts {
+		nextWeekDay = nextWeekDay.AddDate(0, 0, 1)
+	}
+
+	return nextWeekDay
+}
+
+func GetNextWeekDayDateTime(wdt time.Time) time.Time {
+	diff := int(time.Now().Weekday()) - int(wdt.Weekday())
+	if diff <= 0 {
+		diff += 7
+	}
+	return wdt.AddDate(0, 0, diff)
 }
 
 func CalcTimeRange(fromDate string, toDate string) int64 {

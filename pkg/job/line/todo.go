@@ -82,6 +82,23 @@ func convertTimeToPushDateTime(dateTime string) string {
 
 func checkCanPushLineNotification(ln *model.LineNotification) bool {
 	pushDateTime := ln.PushDateTime
+
+	if ln.PushCycle != "specify" {
+		nowWeekDay := time.Now().Weekday()
+		pcs := strings.Split(ln.PushCycle, ",")
+		if slices.Contains(pcs, nowWeekDay.String()) {
+			nowDate := time.Now().Format("2006-01-02")
+			st := pushDateTime.Format("15:04:05")
+			pdts := fmt.Sprintf("%s %s", nowDate, st)
+			pushDateTime, err := time.ParseInLocation("2006-01-02 15:04:05", pdts, time.Now().Local().Location())
+			if err != nil {
+				return false
+			}
+			minTolerantDateTime := time.Now().Add(-30 * time.Second)
+			maxTolerantDateTime := time.Now().Add(30 * time.Second)
+			return minTolerantDateTime.Before(pushDateTime) && maxTolerantDateTime.After(pushDateTime)
+		}
+	}
 	minTolerantDateTime := time.Now().Add(-30 * time.Second)
 	maxTolerantDateTime := time.Now().Add(30 * time.Second)
 	return minTolerantDateTime.Before(pushDateTime) && maxTolerantDateTime.After(pushDateTime)
@@ -98,23 +115,25 @@ func afterPushLineNotification(ln *model.LineNotification) error {
 			return err
 		}
 	}
-	switch ln.Limit {
-	case 0:
+
+	// if ln.PushCycle != "specify" && ln.Limit == -1 {
+	// 	//push weekday is next weekday
+	// 	nextDateTime := ln.PushDateTime.AddDate(0, 0, 1)
+	// 	wds := nextDateTime.Weekday().String()
+	// 	weekDayCycle := strings.Split(ln.PushCycle, ",")
+	// 	if slices.Contains(weekDayCycle, wds) {
+	// 		ln.PushDateTime = nextDateTime
+	// 		err := ln.Save()
+	// 		if err != nil {
+	// 			return err
+	// 		}
+	// 	}
+	// }
+
+	if ln.Limit == 0 {
 		err = ln.Delete()
 		if err != nil {
 			return err
-		}
-	case -1:
-		//push weekday is next weekday
-		nextDateTime := ln.PushDateTime.AddDate(0, 0, 1)
-		wds := nextDateTime.Weekday().String()
-		weekDayCycle := strings.Split(ln.PushCycle, ",")
-		if slices.Index(weekDayCycle, wds) != -1 {
-			ln.PushDateTime = nextDateTime
-			err := ln.Save()
-			if err != nil {
-				return err
-			}
 		}
 	}
 
