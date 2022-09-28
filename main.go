@@ -18,8 +18,8 @@ package main
 import (
 	"github.com/programzheng/black-key/config"
 
-	"github.com/programzheng/black-key/pkg/job"
-	"github.com/programzheng/black-key/pkg/router"
+	"github.com/programzheng/black-key/internal/job"
+	"github.com/programzheng/black-key/internal/router"
 
 	"github.com/gin-gonic/gin"
 )
