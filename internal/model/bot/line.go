@@ -2,7 +2,6 @@ package bot
 
 import (
 	"github.com/programzheng/black-key/internal/database"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type LineBotRequest struct {
@@ -14,13 +13,19 @@ type LineBotRequest struct {
 	Request    string `bson:"request"`
 }
 
-const MongoCollection = "line_bot_request"
+type LineBotRequestRepository struct {
+	Model *LineBotRequest
+	database.MongoBaseRepository
+}
 
-func (lbr *LineBotRequest) Create() (*string, error) {
-	r, err := database.NewMongoInstance().CreateOne(MongoCollection, lbr)
-	if err != nil {
-		return nil, err
+const mongoCollectionName = "line_bot_request"
+
+func NewLineBotRequestRepository() *LineBotRequestRepository {
+	mbr := *database.NewMongoBaseRepository()
+	mbr.CollectionName = mongoCollectionName
+	lbrr := &LineBotRequestRepository{
+		Model:               &LineBotRequest{},
+		MongoBaseRepository: mbr,
 	}
-	id := r.InsertedID.(primitive.ObjectID).Hex()
-	return &id, nil
+	return lbrr
 }

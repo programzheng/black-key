@@ -46,8 +46,8 @@ func SetLineBot() *linebot.Client {
 	return botClient
 }
 
-func (lbrs *LineBotRequestService) Create(attributes map[string]interface{}) (string, error) {
-	model := bot.LineBotRequest{
+func (lbrs *LineBotRequestService) CreateOne(attributes map[string]interface{}) (string, error) {
+	m := bot.LineBotRequest{
 		Type:       attributes["Type"].(string),
 		GroupID:    attributes["GroupID"].(string),
 		RoomID:     attributes["RoomID"].(string),
@@ -55,7 +55,7 @@ func (lbrs *LineBotRequestService) Create(attributes map[string]interface{}) (st
 		ReplyToken: attributes["ReplyToken"].(string),
 		Request:    attributes["Request"].(string),
 	}
-	ID, err := model.Create()
+	ID, err := bot.NewLineBotRequestRepository().CreateOne(m)
 	if err != nil {
 		return "", err
 	}

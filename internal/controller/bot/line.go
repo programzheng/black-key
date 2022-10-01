@@ -33,7 +33,7 @@ func LineWebHook(ctx *gin.Context) {
 		}
 		requestString := string(request)
 		lbrs := &bot.LineBotRequestService{}
-		if _, err := lbrs.Create(map[string]interface{}{
+		if _, err := lbrs.CreateOne(map[string]interface{}{
 			"Type":       string(event.Source.Type),
 			"GroupID":    event.Source.GroupID,
 			"RoomID":     event.Source.RoomID,
