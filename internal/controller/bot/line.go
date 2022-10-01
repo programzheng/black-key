@@ -117,11 +117,3 @@ func LinePush(ctx *gin.Context) {
 		return
 	}
 }
-
-func defaultTemplateMessage() *linebot.TemplateMessage {
-	leftBtn := linebot.NewMessageAction("left", "left clicked")
-	rightBtn := linebot.NewMessageAction("right", "right clicked")
-	template := linebot.NewConfirmTemplate("Hello World", leftBtn, rightBtn)
-	message := linebot.NewTemplateMessage("Reply", template)
-	return message
-}
