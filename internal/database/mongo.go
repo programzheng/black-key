@@ -17,6 +17,7 @@ type MongoInstance struct {
 
 type MongoBaseRepository struct {
 	MongoInstance
+	Models interface{}
 }
 
 func newMongoInstance() *MongoInstance {
@@ -52,13 +53,14 @@ func (mbr *MongoBaseRepository) CreateOne(m interface{}) (*string, error) {
 	return &id, nil
 }
 
-func (mbr *MongoBaseRepository) Find(f interface{}, ms interface{}) (interface{}, error) {
+func (mbr *MongoBaseRepository) Find(f interface{}) (interface{}, error) {
 	ctx := context.TODO()
 	cursor, err := mbr.MongoInstance.Collection.Find(ctx, f)
 	if err != nil {
 		return nil, err
 	}
 	defer cursor.Close(ctx)
+	ms := mbr.Models
 	if err := cursor.All(ctx, &ms); err != nil {
 		return nil, err
 	}

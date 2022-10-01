@@ -33,10 +33,11 @@ func (lbrService *LineBotRequestService) Get(f map[string]interface{}) ([]bot.Li
 		}
 		filter = append(filter, be)
 	}
-	lbrsis, err := bot.NewLineBotRequestRepository().Find(filter, []bot.LineBotRequest{})
+	lbris, err := bot.NewLineBotRequestRepository().Find(filter)
 	if err != nil {
 		return nil, err
 	}
-	lbrs := lbrsis.([]bot.LineBotRequest)
+	lbrs := lbris.([]bot.LineBotRequest)
+
 	return lbrs, nil
 }

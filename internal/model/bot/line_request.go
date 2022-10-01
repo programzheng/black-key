@@ -14,17 +14,16 @@ type LineBotRequest struct {
 }
 
 type LineBotRequestRepository struct {
-	Model *LineBotRequest
 	database.MongoBaseRepository
 }
 
 const mongoCollectionName = "line_bot_requests"
 
 func NewLineBotRequestRepository() *LineBotRequestRepository {
-	mbr := *database.NewMongoBaseRepository(mongoCollectionName)
+	mbr := database.NewMongoBaseRepository(mongoCollectionName)
+	mbr.Models = []LineBotRequest{}
 	lbrr := &LineBotRequestRepository{
-		Model:               &LineBotRequest{},
-		MongoBaseRepository: mbr,
+		MongoBaseRepository: *mbr,
 	}
 	return lbrr
 }
