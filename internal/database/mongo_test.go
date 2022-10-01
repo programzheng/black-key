@@ -5,8 +5,9 @@ import (
 )
 
 func TestMongoCreateOne(t *testing.T) {
-	md := NewMongoInstance()
-	r, err := md.CreateOne("test", struct {
+	mbr := NewMongoBaseRepository()
+	mbr.CollectionName = "test"
+	r, err := mbr.CreateOne(struct {
 		Name string
 	}{
 		Name: "test",
