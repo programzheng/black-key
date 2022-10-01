@@ -48,11 +48,11 @@ func Fail(ctx *gin.Context, err error) {
 	} else {
 		customError = nil
 	}
-	ctx.JSON(http.StatusUnprocessableEntity, gin.H{
-		"Code":    http.StatusUnprocessableEntity,
+	ctx.JSON(http.StatusInternalServerError, gin.H{
+		"Code":    http.StatusInternalServerError,
 		"Message": customError,
 	})
-	ctx.AbortWithStatus(http.StatusUnprocessableEntity)
+	ctx.AbortWithStatus(http.StatusInternalServerError)
 }
 
 func Unauthorized(ctx *gin.Context, err error) {

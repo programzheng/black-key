@@ -21,8 +21,7 @@ type LineBotRequestRepository struct {
 const mongoCollectionName = "line_bot_requests"
 
 func NewLineBotRequestRepository() *LineBotRequestRepository {
-	mbr := *database.NewMongoBaseRepository()
-	mbr.CollectionName = mongoCollectionName
+	mbr := *database.NewMongoBaseRepository(mongoCollectionName)
 	lbrr := &LineBotRequestRepository{
 		Model:               &LineBotRequest{},
 		MongoBaseRepository: mbr,

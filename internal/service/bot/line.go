@@ -14,9 +14,6 @@ import (
 	"github.com/line/line-bot-sdk-go/linebot"
 )
 
-type LineBotRequestService struct {
-}
-
 type LineID struct {
 	GroupID string
 	RoomID  string
@@ -44,22 +41,6 @@ func SetLineBot() *linebot.Client {
 		log.Println("LINE bot error:", err)
 	}
 	return botClient
-}
-
-func (lbrs *LineBotRequestService) CreateOne(attributes map[string]interface{}) (string, error) {
-	m := bot.LineBotRequest{
-		Type:       attributes["Type"].(string),
-		GroupID:    attributes["GroupID"].(string),
-		RoomID:     attributes["RoomID"].(string),
-		UserID:     attributes["UserID"].(string),
-		ReplyToken: attributes["ReplyToken"].(string),
-		Request:    attributes["Request"].(string),
-	}
-	ID, err := bot.NewLineBotRequestRepository().CreateOne(m)
-	if err != nil {
-		return "", err
-	}
-	return *ID, nil
 }
 
 func LineReplyMessage(replyToken string, messages interface{}) {

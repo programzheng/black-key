@@ -5,6 +5,7 @@ import (
 
 	"github.com/programzheng/black-key/internal/controller/admin"
 	"github.com/programzheng/black-key/internal/controller/auth"
+	"github.com/programzheng/black-key/internal/controller/bot"
 	"github.com/programzheng/black-key/internal/controller/file"
 	"github.com/programzheng/black-key/internal/middleware"
 )
@@ -26,6 +27,10 @@ func setAPIRoute(router *gin.Engine) {
 		filesGroup := apiGroup.Group("/files")
 		{
 			filesGroup.POST("", file.Upload)
+		}
+		botGroup := apiGroup.Group("/bot")
+		{
+			botGroup.GET("line_requests", bot.GetLineBotRequest)
 		}
 	}
 

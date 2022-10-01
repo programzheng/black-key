@@ -32,8 +32,8 @@ func LineWebHook(ctx *gin.Context) {
 			return
 		}
 		requestString := string(request)
-		lbrs := &bot.LineBotRequestService{}
-		if _, err := lbrs.CreateOne(map[string]interface{}{
+		lbrService := &bot.LineBotRequestService{}
+		if _, err := lbrService.CreateOne(map[string]interface{}{
 			"Type":       string(event.Source.Type),
 			"GroupID":    event.Source.GroupID,
 			"RoomID":     event.Source.RoomID,
@@ -116,4 +116,19 @@ func LinePush(ctx *gin.Context) {
 		helper.Fail(ctx, err)
 		return
 	}
+}
+
+func GetLineBotRequest(ctx *gin.Context) {
+	f := map[string]interface{}{}
+	if err := ctx.ShouldBindJSON(&f); err != nil {
+		helper.Fail(ctx, err)
+		return
+	}
+	lbrService := &bot.LineBotRequestService{}
+	lbrs, err := lbrService.Get(f)
+	if err != nil {
+		helper.Fail(ctx, err)
+		return
+	}
+	helper.Success(ctx, lbrs, nil)
 }

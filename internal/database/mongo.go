@@ -10,13 +10,13 @@ import (
 )
 
 type MongoInstance struct {
-	Client   *mongo.Client
-	Database *mongo.Database
+	Client     *mongo.Client
+	Database   *mongo.Database
+	Collection *mongo.Collection
 }
 
 type MongoBaseRepository struct {
 	MongoInstance
-	CollectionName string
 }
 
 func newMongoInstance() *MongoInstance {
@@ -34,19 +34,33 @@ func newMongoInstance() *MongoInstance {
 	return mi
 }
 
-func NewMongoBaseRepository() *MongoBaseRepository {
+func NewMongoBaseRepository(collectionName string) *MongoBaseRepository {
+	mi := *newMongoInstance()
+	mi.Collection = mi.Database.Collection(collectionName)
 	return &MongoBaseRepository{
-		MongoInstance:  *newMongoInstance(),
-		CollectionName: "",
+		MongoInstance: mi,
 	}
 }
 
 func (mbr *MongoBaseRepository) CreateOne(m interface{}) (*string, error) {
 	ctx := context.TODO()
-	r, err := mbr.MongoInstance.Database.Collection(mbr.CollectionName).InsertOne(ctx, m)
+	r, err := mbr.MongoInstance.Collection.InsertOne(ctx, m)
 	if err != nil {
 		return nil, err
 	}
 	id := r.InsertedID.(primitive.ObjectID).Hex()
 	return &id, nil
+}
+
+func (mbr *MongoBaseRepository) Find(f interface{}, ms interface{}) (interface{}, error) {
+	ctx := context.TODO()
+	cursor, err := mbr.MongoInstance.Collection.Find(ctx, f)
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(ctx)
+	if err := cursor.All(ctx, &ms); err != nil {
+		return nil, err
+	}
+	return ms, nil
 }
