@@ -3,12 +3,9 @@ package bot
 import (
 	"github.com/programzheng/black-key/internal/database"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-
-	"gorm.io/gorm"
 )
 
 type LineBotRequest struct {
-	gorm.Model
 	Type       string `bson:"type"`
 	GroupID    string `bson:"group_id"`
 	RoomID     string `bson:"room_id"`
