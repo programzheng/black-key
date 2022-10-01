@@ -33,15 +33,15 @@ func LineWebHook(ctx *gin.Context) {
 			return
 		}
 		requestString := string(request)
-		lineBotRequest := bot.LineBotRequest{
-			Type:       string(event.Source.Type),
-			GroupID:    event.Source.GroupID,
-			RoomID:     event.Source.RoomID,
-			UserID:     event.Source.UserID,
-			ReplyToken: event.ReplyToken,
-			Request:    requestString,
-		}
-		if _, err := lineBotRequest.Add(); err != nil {
+		lbrs := &bot.LineBotRequestService{}
+		if _, err := lbrs.Create(map[string]interface{}{
+			"Type":       string(event.Source.Type),
+			"GroupID":    event.Source.GroupID,
+			"RoomID":     event.Source.RoomID,
+			"UserID":     event.Source.UserID,
+			"ReplyToken": event.ReplyToken,
+			"Request":    requestString,
+		}); err != nil {
 			helper.Fail(ctx, err)
 			return
 		}

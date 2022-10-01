@@ -1,25 +1,29 @@
 package bot
 
 import (
-	"github.com/programzheng/black-key/internal/model"
+	"github.com/programzheng/black-key/internal/database"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 
 	"gorm.io/gorm"
 )
 
 type LineBotRequest struct {
 	gorm.Model
-	Type       string `gorm:"not null"`
-	GroupID    string
-	RoomID     string
-	UserID     string `gorm:"not null"`
-	ReplyToken string `gorm:"not null"`
-	Request    string `sql:"type:text" gorm:"not null"`
+	Type       string `bson:"type"`
+	GroupID    string `bson:"group_id"`
+	RoomID     string `bson:"room_id"`
+	UserID     string `bson:"user_id"`
+	ReplyToken string `bson:"reply_token"`
+	Request    string `bson:"request"`
 }
 
-func (lineBotRequest LineBotRequest) Add() (uint, error) {
-	model.Migrate(&lineBotRequest)
-	if err := model.DB.Save(&lineBotRequest).Error; err != nil {
-		return 0, err
+const MongoCollection = "line_bot_request"
+
+func (lbr *LineBotRequest) Create() (*string, error) {
+	r, err := database.NewMongoInstance().CreateOne(MongoCollection, lbr)
+	if err != nil {
+		return nil, err
 	}
-	return lineBotRequest.ID, nil
+	id := r.InsertedID.(primitive.ObjectID).Hex()
+	return &id, nil
 }
