@@ -5,7 +5,6 @@ import (
 
 	"github.com/programzheng/black-key/config"
 	"github.com/programzheng/black-key/internal/helper"
-	"github.com/programzheng/black-key/internal/library/line/bot/template"
 	"github.com/programzheng/black-key/internal/service/bot"
 
 	"github.com/gin-gonic/gin"
@@ -112,7 +111,7 @@ func LinePush(ctx *gin.Context) {
 		pushId = pushMessage.PushID
 	}
 
-	err := bot.LinePushMessage(pushId, template.Text(pushMessage.Text))
+	err := bot.LinePushMessage(pushId, linebot.NewTextMessage(pushMessage.Text))
 	if err != nil {
 		helper.Fail(ctx, err)
 		return

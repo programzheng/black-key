@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/line/line-bot-sdk-go/linebot"
-	"github.com/programzheng/black-key/internal/library/line/bot/template"
 	model "github.com/programzheng/black-key/internal/model/bot"
 	"github.com/programzheng/black-key/internal/service/bot"
 	"golang.org/x/exp/slices"
@@ -43,7 +42,7 @@ func RunSchedule() {
 			}
 			pushID := getPushID(ln)
 			if pushID != "" {
-				err := bot.LinePushMessage(pushID, template.Text(tp.Text))
+				err := bot.LinePushMessage(pushID, linebot.NewTextMessage(tp.Text))
 				if err != nil {
 					log.Printf("pkg/job/line/todo RunSchedule LinePushMessage error: %v", err)
 				}
