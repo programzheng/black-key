@@ -4,3 +4,5 @@
 .env.goose
 .env.testing
 /log
+
+.secrets
