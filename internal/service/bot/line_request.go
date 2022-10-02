@@ -1,6 +1,8 @@
 package bot
 
 import (
+	"time"
+
 	"github.com/programzheng/black-key/internal/model/bot"
 	"go.mongodb.org/mongo-driver/bson"
 )
@@ -16,6 +18,7 @@ func (lbrService *LineBotRequestService) CreateOne(attributes map[string]interfa
 		UserID:     attributes["UserID"].(string),
 		ReplyToken: attributes["ReplyToken"].(string),
 		Request:    attributes["Request"].(string),
+		CreatedAt:  time.Now(),
 	}
 	ID, err := bot.NewLineBotRequestRepository().CreateOne(m)
 	if err != nil {
