@@ -244,3 +244,225 @@ func deleteTodoByPostBack(lpba *LinePostBackAction) interface{} {
 
 	return linebot.NewTextMessage("刪除成功")
 }
+
+func startRockPaperScissor(lineId LineID, text string) (interface{}, error) {
+	groupMemberCount := getGroupMemberCount(lineId.GroupID)
+	// if groupMemberCount <= 1 {
+	// 	return linebot.NewTextMessage("此功能需要群組大於(包含)2人"), nil
+	// }
+	key := "rock-paper-scissors-" + lineId.GroupID
+	minutes := "5"
+	m, _ := time.ParseDuration(minutes + "m")
+	exist := rdb.Exists(ctx, key).Val()
+	if exist > 0 {
+		return rockPaperScissorsTemplate(lineId, "已有猜拳正在進行中", minutes), nil
+	}
+	err := rdb.SAdd(ctx, key, groupMemberCount).Err()
+	if err != nil {
+		log.Fatalf("create a rock-paper-scissors error:%v", err)
+	}
+	err = rdb.Expire(ctx, key, m).Err()
+	if err != nil {
+		log.Fatalf("set expire rock-paper-scissors time error:%v", err)
+	}
+	return rockPaperScissorsTemplate(lineId, "剪刀石頭布", minutes), nil
+}
+
+func rockPaperScissorTurn(lpba *LinePostBackAction) interface{} {
+	lineGroupID := lpba.Data["LineGroupID"].(string)
+	lineUserID := lpba.Data["LineUserID"].(string)
+	key := "rock-paper-scissors-" + lineGroupID
+	exist := rdb.Exists(ctx, key).Val()
+	if exist == 0 {
+		return linebot.NewTextMessage("請輸入\"猜拳\"開始賽局")
+	}
+	action := lpba.Data["Action"].(string)
+	if ok, _ := rdb.SIsMember(ctx, key, lineUserID+"-out").Result(); ok {
+		memberName := "Unknow"
+		lineMember, _ := botClient.GetGroupMemberProfile(lineGroupID, lineUserID).Do()
+		memberName = lineMember.DisplayName
+		return linebot.NewTextMessage(memberName + "已出局")
+	}
+	if ok, _ := rdb.SIsMember(ctx, key, lineUserID+"-rock").Result(); ok {
+		memberName := "Unknow"
+		lineMember, _ := botClient.GetGroupMemberProfile(lineGroupID, lineUserID).Do()
+		memberName = lineMember.DisplayName
+		return linebot.NewTextMessage(memberName + "已出過")
+	}
+	if ok, _ := rdb.SIsMember(ctx, key, lineUserID+"-paper").Result(); ok {
+		memberName := "Unknow"
+		lineMember, _ := botClient.GetGroupMemberProfile(lineGroupID, lineUserID).Do()
+		memberName = lineMember.DisplayName
+		return linebot.NewTextMessage(memberName + "已出過")
+	}
+	if ok, _ := rdb.SIsMember(ctx, key, lineUserID+"-scissors").Result(); ok {
+		memberName := "Unknow"
+		lineMember, _ := botClient.GetGroupMemberProfile(lineGroupID, lineUserID).Do()
+		memberName = lineMember.DisplayName
+		return linebot.NewTextMessage(memberName + "已出過")
+	}
+	es, err := rdb.SMembers(ctx, key).Result()
+	if err != nil {
+		log.Fatalf("get a rock-paper-scissors set error:%v", err)
+	}
+	numberOfPeople := 4
+	//判斷結果
+	if len(es) == numberOfPeople {
+		messages := []linebot.SendingMessage{}
+		es = append(es, lineUserID+"-"+action)
+		end := false
+		tieCount := 0
+		var everyBuilder strings.Builder
+		var outBuilder strings.Builder
+		var resultBuilder strings.Builder
+		for _, s := range es {
+			result := strings.Split(s, "-")
+			if len(result) > 1 {
+				currentMemberName := "Unknow"
+				oldUserId := result[0]
+				currentLineMember, err := botClient.GetGroupMemberProfile(lineGroupID, oldUserId).Do()
+				if err == nil {
+					currentMemberName = currentLineMember.DisplayName
+				}
+				oldAction := result[1]
+				winCount := conditionRockPaperScissors(oldAction, es, numberOfPeople)
+				everyBuilder.WriteString(currentMemberName + "出" + convertRockPaperScissors(oldAction) + "\n")
+				//出局
+				if winCount == 0 {
+					err = rdb.SRem(ctx, key, s).Err()
+					if err != nil {
+						log.Fatalf("rock-paper-scissors out rem error:%v", err)
+					}
+					err = rdb.SAdd(ctx, key, oldUserId+"-out").Err()
+					if err != nil {
+						log.Fatalf("rock-paper-scissors out add error:%v", err)
+					}
+					outBuilder.WriteString(currentMemberName + "出局\n")
+					//有獲勝者
+				} else if winCount == (numberOfPeople - 1) {
+					end = true
+					resultBuilder.WriteString("*" + currentMemberName + "獲勝*\n")
+				} else {
+					tieCount++
+					err = rdb.SRem(ctx, key, s).Err()
+					if err != nil {
+						log.Fatalf("rock-paper-scissors rem error:%v", err)
+					}
+				}
+				//流局
+				if tieCount == numberOfPeople {
+					end = true
+					resultBuilder.WriteString("流局\n")
+				}
+			}
+		}
+		if end {
+			err = rdb.Del(ctx, key).Err()
+			if err != nil {
+				log.Fatalf("rock-paper-scissors is end error:%v", err)
+			}
+		}
+		if everyBuilder.Len() > 0 {
+			messages = append(messages, linebot.NewTextMessage(strings.TrimSuffix(everyBuilder.String(), "\n")))
+		}
+		if outBuilder.Len() > 0 {
+			messages = append(messages, linebot.NewTextMessage(strings.TrimSuffix(outBuilder.String(), "\n")))
+		}
+		if resultBuilder.Len() > 0 {
+			messages = append(messages, linebot.NewTextMessage(strings.TrimSuffix(resultBuilder.String(), "\n")))
+		}
+		return messages
+	}
+	err = rdb.SAdd(ctx, key, lineUserID+"-"+action).Err()
+	if err != nil {
+		log.Fatalf("create a rock-paper-scissors error:%v", err)
+	}
+	return nil
+}
+
+func rockPaperScissorsTemplate(lineId LineID, templateTitle string, minutes string) *linebot.TemplateMessage {
+	if minutes == "" {
+		minutes = "5"
+	}
+	rockPostBack := LinePostBackAction{
+		Action: "猜拳",
+		Data: map[string]interface{}{
+			"LineRoomID":  lineId.RoomID,
+			"LineGroupID": lineId.GroupID,
+			"LineUserID":  lineId.UserID,
+			"Action":      "rock",
+		},
+	}
+	rockPostBackJson, err := json.Marshal(rockPostBack)
+	if err != nil {
+		log.Fatalf("rock post back json failed: %v", err)
+	}
+	rockBtn := linebot.NewPostbackAction("石頭", string(rockPostBackJson), "", "")
+	paperPostBack := LinePostBackAction{
+		Action: "猜拳",
+		Data: map[string]interface{}{
+			"LineRoomID":  lineId.RoomID,
+			"LineGroupID": lineId.GroupID,
+			"LineUserID":  lineId.UserID,
+			"Action":      "paper",
+		},
+	}
+	paperPostBackJson, err := json.Marshal(paperPostBack)
+	if err != nil {
+		log.Fatalf("paper post back json failed: %v", err)
+	}
+	paperBtn := linebot.NewPostbackAction("布", string(paperPostBackJson), "", "")
+	scissorsPostBack := LinePostBackAction{
+		Action: "猜拳",
+		Data: map[string]interface{}{
+			"LineRoomID":  lineId.RoomID,
+			"LineGroupID": lineId.GroupID,
+			"LineUserID":  lineId.UserID,
+			"Action":      "scissors",
+		},
+	}
+	scissorsPostBackJson, err := json.Marshal(scissorsPostBack)
+	if err != nil {
+		log.Fatalf("scissors post back json failed: %v", err)
+	}
+	scissorsBtn := linebot.NewPostbackAction("剪刀", string(scissorsPostBackJson), "", "")
+	buttonTemplate := linebot.NewButtonsTemplate("https://images.unsplash.com/photo-1614032686099-e648d6dea9b3", templateTitle, minutes+"分鐘內結束", rockBtn, paperBtn, scissorsBtn)
+	return linebot.NewTemplateMessage("開始剪刀石頭布", buttonTemplate)
+}
+
+func convertRockPaperScissors(target string) string {
+	switch target {
+	case "rock":
+		return "石頭"
+	case "paper":
+		return "布"
+	case "scissors":
+		return "剪刀"
+	}
+	return "Unknow"
+}
+
+func conditionRockPaperScissors(target string, all []string, numberOfPeople int) int {
+	winCount := 0
+	for _, s := range all {
+		result := strings.Split(s, "-")
+		if len(result) > 1 {
+			action := result[1]
+			switch target {
+			case "rock":
+				if action == "scissors" {
+					winCount++
+				}
+			case "paper":
+				if action == "rock" {
+					winCount++
+				}
+			case "scissors":
+				if action == "paper" {
+					winCount++
+				}
+			}
+		}
+	}
+	return winCount
+}
