@@ -33,7 +33,6 @@ func getTodo(lineId LineID) (interface{}, error) {
 			log.Printf("pkg/service/bot/line_messaging getTodo json.Unmarshal error: %v", err)
 			return nil, err
 		}
-		pushDateTime := ln.PushDateTime.String()
 		deletePostBackAction := LinePostBackAction{
 			Action: "delete line notification",
 			Data: map[string]interface{}{
@@ -45,10 +44,20 @@ func getTodo(lineId LineID) (interface{}, error) {
 			log.Printf("pkg/service/bot/line_messaging getTodo deletePostBackActionJson json.Marshal error: %v", err)
 			return nil, err
 		}
+		pushDateTime := ln.PushDateTime.String()
+		title := fmt.Sprintf(
+			"%d, %s",
+			ln.ID,
+			tp.Text,
+		)
+		text := fmt.Sprintf(
+			"下次發送時間:%s",
+			pushDateTime,
+		)
 		carouselColumn := linebot.NewCarouselColumn(
 			"",
-			tp.Text,
-			fmt.Sprintf("發送時間: %s", pushDateTime),
+			title,
+			text,
 			linebot.NewPostbackAction(
 				"刪除",
 				string(deletePostBackActionJson),
@@ -58,9 +67,22 @@ func getTodo(lineId LineID) (interface{}, error) {
 		)
 		carouselColumns = append(carouselColumns, carouselColumn)
 	}
-	carouselTemplate := linebot.NewCarouselTemplate(carouselColumns...)
+	messages := []linebot.SendingMessage{}
+	chunkSize := 10
+	for i := 0; i < len(carouselColumns); i += chunkSize {
+		end := i + chunkSize
+		if end > len(carouselColumns) {
+			end = len(carouselColumns)
+		}
+		carouselTemplate := linebot.NewCarouselTemplate(carouselColumns[i:end]...)
+		templateMessage := linebot.NewTemplateMessage(
+			fmt.Sprintf("所有提醒-%d", len(messages)+1),
+			carouselTemplate,
+		)
+		messages = append(messages, templateMessage)
+	}
 
-	return linebot.NewTemplateMessage("所有提醒", carouselTemplate), nil
+	return messages, nil
 }
 
 func convertPushDateTime(pdt string) string {
