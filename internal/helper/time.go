@@ -22,7 +22,7 @@ func GetWeekDays() []string {
 	}
 }
 
-func GetWeekDayByTraditionalChinese(traditionalChinese string) string {
+func GetWeekDayEnglishByTraditionalChinese(traditionalChinese string) string {
 	switch traditionalChinese {
 	case "星期日", "禮拜日":
 		return GetWeekDays()[0]
@@ -42,6 +42,46 @@ func GetWeekDayByTraditionalChinese(traditionalChinese string) string {
 
 	case "星期六", "禮拜六":
 		return GetWeekDays()[6]
+	}
+	return ""
+}
+
+func GetWeekDayTraditionalChineseByEnglish(english string) string {
+	switch english {
+	case "Sunday":
+		return "星期日"
+	case "Monday":
+		return "星期一"
+	case "Tuesday":
+		return "星期二"
+	case "Wednesday":
+		return "星期三"
+	case "Thursday":
+		return "星期四"
+	case "Friday":
+		return "星期五"
+	case "Saturday":
+		return "星期六"
+	}
+	return ""
+}
+
+func GetWeekDayShortTraditionalChineseByEnglish(english string) string {
+	switch english {
+	case "Sunday":
+		return "日"
+	case "Monday":
+		return "一"
+	case "Tuesday":
+		return "二"
+	case "Wednesday":
+		return "三"
+	case "Thursday":
+		return "四"
+	case "Friday":
+		return "五"
+	case "Saturday":
+		return "六"
 	}
 	return ""
 }

@@ -44,14 +44,27 @@ func getTodo(lineId LineID) (interface{}, error) {
 			log.Printf("pkg/service/bot/line_messaging getTodo deletePostBackActionJson json.Marshal error: %v", err)
 			return nil, err
 		}
-		pushDateTime := ln.PushDateTime.String()
+		pushDateTime := ln.PushDateTime.Local().Format(helper.Yyyymmddhhmmss)
+		pushCycleString := func(ln *bot.LineNotification) string {
+			var buf strings.Builder
+			pcs := strings.Split(ln.PushCycle, ",")
+			buf.WriteString("星期")
+			for i, pc := range pcs {
+				buf.WriteString(helper.GetWeekDayShortTraditionalChineseByEnglish(pc))
+				if i != len(pcs)-1 {
+					buf.WriteString("、")
+				}
+			}
+			return buf.String()
+		}(ln)
 		title := fmt.Sprintf(
 			"%d, %s",
 			ln.ID,
 			tp.Text,
 		)
 		text := fmt.Sprintf(
-			"下次發送時間:%s",
+			"發送週期:%s \n下次發送時間:%s",
+			pushCycleString,
 			pushDateTime,
 		)
 		carouselColumn := linebot.NewCarouselColumn(
@@ -155,7 +168,7 @@ func todo(lineId LineID, text string) (interface{}, error) {
 	wdtcs := strings.Split(parseDate[0], ",")
 	wdens := []string{}
 	for _, wdtc := range wdtcs {
-		wden := helper.GetWeekDayByTraditionalChinese(wdtc)
+		wden := helper.GetWeekDayEnglishByTraditionalChinese(wdtc)
 		if wden == "" {
 			break
 		}
