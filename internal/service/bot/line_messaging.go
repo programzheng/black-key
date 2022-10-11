@@ -284,8 +284,15 @@ func deleteTodoByPostBack(lpba *LinePostBackAction) interface{} {
 			"刪除失敗",
 		)
 	}
-
-	return linebot.NewTextMessage("刪除成功")
+	var tp linebot.TextMessage
+	data := []byte(ln.Template)
+	err = json.Unmarshal(data, &tp)
+	if err != nil {
+		log.Printf("pkg/service/bot/line_messaging deleteTodoByPostBack json.Unmarshal error: %v", err)
+		return err
+	}
+	text := fmt.Sprintf("刪除ID為%d \"%s\" 的提醒成功", ln.ID, tp.Text)
+	return linebot.NewTextMessage(text)
 }
 
 func startRockPaperScissor(lineId LineID, text string) (interface{}, error) {
