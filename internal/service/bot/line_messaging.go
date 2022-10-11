@@ -46,16 +46,24 @@ func getTodo(lineId LineID) (interface{}, error) {
 		}
 		pushDateTime := ln.PushDateTime.Local().Format(helper.Yyyymmddhhmmss)
 		pushCycleString := func(ln *bot.LineNotification) string {
-			var buf strings.Builder
-			pcs := strings.Split(ln.PushCycle, ",")
-			buf.WriteString("星期")
-			for i, pc := range pcs {
-				buf.WriteString(helper.GetWeekDayShortTraditionalChineseByEnglish(pc))
-				if i != len(pcs)-1 {
-					buf.WriteString("、")
+			r := ""
+			switch ln.PushCycle {
+			case "specify":
+				r = "指定時間"
+			default:
+				var buf strings.Builder
+				pcs := strings.Split(ln.PushCycle, ",")
+				buf.WriteString("星期")
+				for i, pc := range pcs {
+					buf.WriteString(helper.GetWeekDayShortTraditionalChineseByEnglish(pc))
+					if i != len(pcs)-1 {
+						buf.WriteString("、")
+					}
 				}
+				r = buf.String()
 			}
-			return buf.String()
+
+			return r
 		}(ln)
 		title := fmt.Sprintf(
 			"%d, %s",
