@@ -19,12 +19,12 @@ type Todo struct {
 	Template  *linebot.TextMessage
 }
 
-func RunSchedule() {
+func RunPushLineNotificationSchedule() {
 	//get line notifications from database
 	ln := &model.LineNotification{}
 	lns, err := ln.Get(nil, nil)
 	if err != nil {
-		log.Printf("pkg/job/line/todo RunSchedule Get error: %v", err)
+		log.Printf("pkg/job/line/todo RunPushLineNotificationSchedule Get error: %v", err)
 	}
 	for _, ln := range lns {
 		canPush := checkCanPushLineNotification(ln)
@@ -37,22 +37,26 @@ func RunSchedule() {
 			data := []byte(ln.Template)
 			err := json.Unmarshal(data, &tp)
 			if err != nil {
-				log.Printf("pkg/job/line/todo RunSchedule json.Unmarshal error: %v", err)
+				log.Printf("pkg/job/line/todo RunPushLineNotificationSchedule json.Unmarshal error: %v", err)
 				return
 			}
 			pushID := getPushID(ln)
 			if pushID != "" {
 				err := bot.LinePushMessage(pushID, linebot.NewTextMessage(tp.Text))
 				if err != nil {
-					log.Printf("pkg/job/line/todo RunSchedule LinePushMessage error: %v", err)
+					log.Printf("pkg/job/line/todo RunPushLineNotificationSchedule LinePushMessage error: %v", err)
 				}
 				err = afterPushLineNotification(ln)
 				if err != nil {
-					log.Printf("pkg/job/line/todo RunSchedule PermanentlyDelete error: %v", err)
+					log.Printf("pkg/job/line/todo RunPushLineNotificationSchedule PermanentlyDelete error: %v", err)
 				}
 			}
 		}
 	}
+}
+
+func RunRefreshLineNotificationSchedule() {
+	bot.RefreshTodoByAfterPushDateTime()
 }
 
 func convertDateTimeToOnlyDateTimeString(dateTime string) string {

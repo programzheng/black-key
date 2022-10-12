@@ -10,7 +10,10 @@ import (
 func Run() {
 	s := gocron.NewScheduler(time.Now().Local().Location())
 	s.Cron("*/1 * * * *").Do(func() {
-		line.RunSchedule()
+		line.RunPushLineNotificationSchedule()
 	}) // every minute
+	s.Cron("0 0 * * *").Do(func() {
+		line.RunRefreshLineNotificationSchedule()
+	}) // every daily
 	s.StartAsync()
 }

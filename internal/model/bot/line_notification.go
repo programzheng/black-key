@@ -49,6 +49,17 @@ func (ln *LineNotification) Get(maps map[string]interface{}, not map[string]inte
 	return lns, nil
 }
 
+func (ln *LineNotification) GetAfterPushDateTime(datetime time.Time) ([]*LineNotification, error) {
+	var lns []*LineNotification
+
+	err := model.DB.Where("push_cycle != ?", "specify").Where("push_date_time < ?", datetime).Find(&lns).Error
+	if err != nil && err != gorm.ErrRecordNotFound {
+		return nil, err
+	}
+
+	return lns, nil
+}
+
 func (ln *LineNotification) GetByPushDateTimeRange(comparison string, dateTime string) ([]*LineNotification, error) {
 	var lns []*LineNotification
 

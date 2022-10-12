@@ -27,6 +27,6 @@ func TestConvertTimeToPushDateTime(t *testing.T) {
 	t.Log("success")
 }
 
-func TestRun(t *testing.T) {
-	RunSchedule()
+func TestRunPushLineNotificationSchedule(t *testing.T) {
+	RunPushLineNotificationSchedule()
 }
