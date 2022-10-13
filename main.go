@@ -16,7 +16,10 @@ limitations under the License.
 package main
 
 import (
+	"embed"
+
 	"github.com/programzheng/black-key/config"
+	"github.com/programzheng/black-key/i18n"
 
 	"github.com/programzheng/black-key/internal/job"
 	"github.com/programzheng/black-key/internal/router"
@@ -24,7 +27,14 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// If use go:embed
+//
+//go:embed dist/lang/locale.*.toml
+var localeFS embed.FS
+
 func main() {
+	i18n.LocaleFSPathForLoad = "dist/lang/locale.%v.toml"
+	i18n.LocaleFS = localeFS
 	// cmd.Execute()
 	Run()
 }
