@@ -7,10 +7,18 @@ import (
 	"time"
 
 	"github.com/line/line-bot-sdk-go/linebot"
+	"github.com/programzheng/black-key/i18n"
 	"github.com/programzheng/black-key/internal/helper"
 	"github.com/programzheng/black-key/internal/model/bot"
 	log "github.com/sirupsen/logrus"
 )
+
+func setTodoHelper() interface{} {
+	t := &(i18n.Translation{})
+	s := t.Translate("LINE_Messaging_Notification_Helper")
+
+	return linebot.NewTextMessage(s)
+}
 
 func getTodo(lineId LineID) (interface{}, error) {
 	lns, err := (&bot.LineNotification{}).Get(map[string]interface{}{
@@ -122,6 +130,9 @@ func convertPushDateTime(pdt string) string {
 
 func todo(lineId LineID, text string) (interface{}, error) {
 	parseText := strings.Split(text, "|")
+	if len(parseText) == 1 {
+		return setTodoHelper(), nil
+	}
 	date := parseText[1]
 	replyText := parseText[2]
 	parseDate := strings.Split(date, " ")
