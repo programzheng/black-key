@@ -9,9 +9,39 @@ import (
 	"github.com/line/line-bot-sdk-go/linebot"
 	"github.com/programzheng/black-key/i18n"
 	"github.com/programzheng/black-key/internal/helper"
+	"github.com/programzheng/black-key/internal/model"
 	"github.com/programzheng/black-key/internal/model/bot"
 	log "github.com/sirupsen/logrus"
 )
+
+func getLineIdMap(lineId LineID) map[string]interface{} {
+	lineIdMap := make(map[string]interface{})
+	lineIdMap["room_id"] = lineId.RoomID
+	lineIdMap["group_id"] = lineId.GroupID
+	lineIdMap["user_id"] = lineId.UserID
+
+	return lineIdMap
+}
+
+func getLineId(lineId LineID) (interface{}, error) {
+	return linebot.NewTextMessage(fmt.Sprintf("RoomID:%v\nGroupID:%v\nUserID:%v", lineId.RoomID, lineId.GroupID, lineId.UserID)), nil
+}
+
+func getMemberLineAvatar(lineId LineID) (interface{}, error) {
+	lineMember, err := botClient.GetProfile(lineId.UserID).Do()
+	if err != nil {
+		return generateErrorTextMessage(), err
+	}
+	return linebot.NewImageMessage(lineMember.PictureURL, lineMember.PictureURL), nil
+}
+
+func getGroupMemberLineAvatar(lineId LineID) (interface{}, error) {
+	lineMember, err := botClient.GetGroupMemberProfile(lineId.GroupID, lineId.UserID).Do()
+	if err != nil {
+		return generateErrorTextMessage(), err
+	}
+	return linebot.NewImageMessage(lineMember.PictureURL, lineMember.PictureURL), nil
+}
 
 func setTodoHelper() interface{} {
 	t := &(i18n.Translation{})
@@ -283,29 +313,6 @@ func checkCanSettingPushMessage(t time.Time) bool {
 	return time.Now().Before(t)
 }
 
-func deleteTodoByPostBack(lpba *LinePostBackAction) interface{} {
-	id := uint(lpba.Data["ID"].(float64))
-	ln, err := bot.LineNotificationFirstByID(id)
-	if err != nil {
-		return nil
-	}
-	err = ln.Delete()
-	if err != nil {
-		return linebot.NewTextMessage(
-			"刪除失敗",
-		)
-	}
-	var tp linebot.TextMessage
-	data := []byte(ln.Template)
-	err = json.Unmarshal(data, &tp)
-	if err != nil {
-		log.Printf("pkg/service/bot/line_messaging deleteTodoByPostBack json.Unmarshal error: %v", err)
-		return err
-	}
-	text := fmt.Sprintf("刪除ID為%d \"%s\" 的提醒成功", ln.ID, tp.Text)
-	return linebot.NewTextMessage(text)
-}
-
 func startRockPaperScissor(lineId LineID, text string) (interface{}, error) {
 	groupMemberCount := getGroupMemberCount(lineId.GroupID)
 	// if groupMemberCount <= 1 {
@@ -329,116 +336,130 @@ func startRockPaperScissor(lineId LineID, text string) (interface{}, error) {
 	return rockPaperScissorsTemplate(lineId, "剪刀石頭布", minutes), nil
 }
 
-func rockPaperScissorTurn(lpba *LinePostBackAction) interface{} {
-	lineGroupID := lpba.Data["LineGroupID"].(string)
-	lineUserID := lpba.Data["LineUserID"].(string)
-	key := "rock-paper-scissors-" + lineGroupID
-	exist := rdb.Exists(ctx, key).Val()
-	if exist == 0 {
-		return linebot.NewTextMessage("請輸入\"猜拳\"開始賽局")
+func createBilling(lineId LineID, text string) (interface{}, error) {
+	parseText := strings.Split(text, "|")
+
+	title := parseText[1]
+	amount := helper.ConvertToInt(parseText[2])
+	note := ""
+	//如果有輸入備註
+	if len(parseText) == 4 {
+		note = parseText[3]
 	}
-	action := lpba.Data["Action"].(string)
-	if ok, _ := rdb.SIsMember(ctx, key, lineUserID+"-out").Result(); ok {
-		memberName := "Unknow"
-		lineMember, _ := botClient.GetGroupMemberProfile(lineGroupID, lineUserID).Do()
-		memberName = lineMember.DisplayName
-		return linebot.NewTextMessage(memberName + "已出局")
-	}
-	if ok, _ := rdb.SIsMember(ctx, key, lineUserID+"-rock").Result(); ok {
-		memberName := "Unknow"
-		lineMember, _ := botClient.GetGroupMemberProfile(lineGroupID, lineUserID).Do()
-		memberName = lineMember.DisplayName
-		return linebot.NewTextMessage(memberName + "已出過")
-	}
-	if ok, _ := rdb.SIsMember(ctx, key, lineUserID+"-paper").Result(); ok {
-		memberName := "Unknow"
-		lineMember, _ := botClient.GetGroupMemberProfile(lineGroupID, lineUserID).Do()
-		memberName = lineMember.DisplayName
-		return linebot.NewTextMessage(memberName + "已出過")
-	}
-	if ok, _ := rdb.SIsMember(ctx, key, lineUserID+"-scissors").Result(); ok {
-		memberName := "Unknow"
-		lineMember, _ := botClient.GetGroupMemberProfile(lineGroupID, lineUserID).Do()
-		memberName = lineMember.DisplayName
-		return linebot.NewTextMessage(memberName + "已出過")
-	}
-	es, err := rdb.SMembers(ctx, key).Result()
+	billingAction(lineId, amount, title, note)
+	amountFloat64 := helper.ConvertToFloat64(amount)
+	amountAvg, amountAvgBase := calculateAmount(lineId.GroupID, amountFloat64)
+	return linebot.NewTextMessage(title + ":記帳完成," + parseText[2] + "/" + helper.ConvertToString(int(amountAvgBase)) + " = " + "*" + helper.ConvertToString(amountAvg) + "*"), nil
+}
+
+func getLineBillings(lineId LineID) (interface{}, error) {
+	messages := []linebot.SendingMessage{}
+
+	lineIdMap := getLineIdMap(lineId)
+	var lbs []bot.LineBilling
+	err := model.DB.Where(lineIdMap).Preload("Billing").Find(&lbs).Error
 	if err != nil {
-		log.Fatalf("get a rock-paper-scissors set error:%v", err)
+		return generateErrorTextMessage(), err
 	}
-	numberOfPeople := 4
-	//判斷結果
-	if len(es) == numberOfPeople {
-		messages := []linebot.SendingMessage{}
-		es = append(es, lineUserID+"-"+action)
-		end := false
-		tieCount := 0
-		var everyBuilder strings.Builder
-		var outBuilder strings.Builder
-		var resultBuilder strings.Builder
-		for _, s := range es {
-			result := strings.Split(s, "-")
-			if len(result) > 1 {
-				currentMemberName := "Unknow"
-				oldUserId := result[0]
-				currentLineMember, err := botClient.GetGroupMemberProfile(lineGroupID, oldUserId).Do()
-				if err == nil {
-					currentMemberName = currentLineMember.DisplayName
-				}
-				oldAction := result[1]
-				winCount := conditionRockPaperScissors(oldAction, es, numberOfPeople)
-				everyBuilder.WriteString(currentMemberName + "出" + convertRockPaperScissors(oldAction) + "\n")
-				//出局
-				if winCount == 0 {
-					err = rdb.SRem(ctx, key, s).Err()
-					if err != nil {
-						log.Fatalf("rock-paper-scissors out rem error:%v", err)
-					}
-					err = rdb.SAdd(ctx, key, oldUserId+"-out").Err()
-					if err != nil {
-						log.Fatalf("rock-paper-scissors out add error:%v", err)
-					}
-					outBuilder.WriteString(currentMemberName + "出局\n")
-					//有獲勝者
-				} else if winCount == (numberOfPeople - 1) {
-					end = true
-					resultBuilder.WriteString("*" + currentMemberName + "獲勝*\n")
-				} else {
-					tieCount++
-					err = rdb.SRem(ctx, key, s).Err()
-					if err != nil {
-						log.Fatalf("rock-paper-scissors rem error:%v", err)
-					}
-				}
-				//流局
-				if tieCount == numberOfPeople {
-					end = true
-					resultBuilder.WriteString("流局\n")
-				}
-			}
-		}
-		if end {
-			err = rdb.Del(ctx, key).Err()
-			if err != nil {
-				log.Fatalf("rock-paper-scissors is end error:%v", err)
-			}
-		}
-		if everyBuilder.Len() > 0 {
-			messages = append(messages, linebot.NewTextMessage(strings.TrimSuffix(everyBuilder.String(), "\n")))
-		}
-		if outBuilder.Len() > 0 {
-			messages = append(messages, linebot.NewTextMessage(strings.TrimSuffix(outBuilder.String(), "\n")))
-		}
-		if resultBuilder.Len() > 0 {
-			messages = append(messages, linebot.NewTextMessage(strings.TrimSuffix(resultBuilder.String(), "\n")))
-		}
-		return messages
+	//沒有記帳資料
+	if len(lbs) == 0 {
+		return linebot.NewTextMessage("目前沒有記帳紀錄哦！"), nil
 	}
-	err = rdb.SAdd(ctx, key, lineUserID+"-"+action).Err()
+	dstByUserID := getDistinctByUserID(lbs)
+	listText := getLineBillingList(lineId, lbs, dstByUserID)
+	messages = append(messages, linebot.NewTextMessage(listText))
+	totalText := getLineBillingTotalAmount(lineId, lbs, dstByUserID)
+	messages = append(messages, linebot.NewTextMessage(totalText))
+
+	return messages, nil
+}
+
+func getLineBillingList(lineId LineID, lbs []bot.LineBilling, dstByUserID map[string]string) string {
+	var sbList strings.Builder
+	sbList.Grow(len(lbs))
+	for key, lb := range lbs {
+		var memberName string
+		amountAvg, amountAvgBase := calculateAmount(lineId.GroupID, helper.ConvertToFloat64(lb.Billing.Amount))
+		//check line member display name is exist
+		if _, ok := dstByUserID[lb.UserID]; ok {
+			memberName = dstByUserID[lb.UserID]
+		}
+		text := fmt.Sprintf("%v\n%v|%v/%v= *%v* |%v", lb.Billing.CreatedAt.Format(helper.Yyyymmddhhmmss), lb.Billing.Title, helper.ConvertToString(lb.Billing.Amount), helper.ConvertToString(amountAvgBase), helper.ConvertToString(amountAvg), memberName)
+		if lb.Billing.Note != "" {
+			text = text + "|" + lb.Billing.Note
+		}
+		if len(lbs)-1 != key {
+			text = text + "\n"
+		}
+		sbList.WriteString(text)
+	}
+	return string(sbList.String())
+}
+
+func getLineBillingTotalAmount(lineId LineID, lbs []bot.LineBilling, dstByUserID map[string]string) string {
+	lbUserIDAmount := make(map[string]float64, 0)
+	var sbTotal strings.Builder
+	sbTotal.Grow(len(dstByUserID))
+	for _, lb := range lbs {
+		amountAvg, _ := calculateAmount(lineId.GroupID, helper.ConvertToFloat64(lb.Billing.Amount))
+		if _, ok := dstByUserID[lb.UserID]; ok {
+			lbUserIDAmount[lb.UserID] = lbUserIDAmount[lb.UserID] + amountAvg
+		}
+	}
+	text := "總付款金額：\n"
+	sbTotal.WriteString(text)
+	for userID, name := range dstByUserID {
+		text = fmt.Sprintf("%v: *%v*\n", name, helper.ConvertToString(lbUserIDAmount[userID]))
+		sbTotal.WriteString(text)
+	}
+	return string(sbTotal.String())
+}
+
+func getBills(lineId LineID, text string) (interface{}, error) {
+	parseText := strings.Split(text, "|")
+	lineIdMap := getLineIdMap(lineId)
+
+	messages := []linebot.SendingMessage{}
+
+	date := time.Now().Format(helper.Yyyymmddhhmmss)
+	//如果有輸入限制日期
+	if len(parseText) == 2 {
+		date = parseText[1]
+	}
+	var lbs []bot.LineBilling
+	err := model.DB.Where(lineIdMap).Where("updated_at < ?", date).Preload("Billing").Find(&lbs).Error
 	if err != nil {
-		log.Fatalf("create a rock-paper-scissors error:%v", err)
+		log.Fatalf("Get failed: %v", err)
 	}
-	return nil
+	//沒有記帳資料
+	if len(lbs) == 0 {
+		return linebot.NewTextMessage(fmt.Sprintf("%v以前沒有記帳紀錄哦！", date)), nil
+	}
+	dstByUserID := getDistinctByUserID(lbs)
+	listText := getLineBillingList(lineId, lbs, dstByUserID)
+	messages = append(messages, linebot.NewTextMessage(listText))
+
+	//template
+	postBack := LinePostBackAction{
+		Action: "結算",
+		Data: map[string]interface{}{
+			"LineRoomID":  lineId.RoomID,
+			"LineGroupID": lineId.GroupID,
+			"LineUserID":  lineId.UserID,
+			"Date":        date,
+		},
+	}
+	postBackJson, err := json.Marshal(postBack)
+	if err != nil {
+		log.Fatalf("Marshal failed: %v", err)
+	}
+	leftBtn := linebot.NewPostbackAction("是", string(postBackJson), "", "")
+	rightBtn := linebot.NewMessageAction("否", "記帳列表")
+
+	confirmTemplate := linebot.NewConfirmTemplate("確定要刪除以上紀錄?", leftBtn, rightBtn)
+	messages = append(messages, linebot.NewTemplateMessage("確定要刪除以上紀錄?", confirmTemplate))
+
+	return messages, nil
 }
 
 func rockPaperScissorsTemplate(lineId LineID, templateTitle string, minutes string) *linebot.TemplateMessage {
@@ -526,4 +547,13 @@ func conditionRockPaperScissors(target string, all []string, numberOfPeople int)
 		}
 	}
 	return winCount
+}
+
+// This feature is available only for verified or premium accounts
+func getGroupMemberIds(groupID string, continuationToken string) []string {
+	groupMemberIds, err := botClient.GetGroupMemberIDs(groupID, continuationToken).Do()
+	if err != nil {
+		log.Fatal("line messaging api get group member ids error:", err)
+	}
+	return groupMemberIds.MemberIDs
 }

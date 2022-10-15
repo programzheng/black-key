@@ -64,7 +64,10 @@ func LineWebHook(ctx *gin.Context) {
 					}
 				}
 			case linebot.EventTypePostback:
-				replyTemplateMessage := bot.UserParsePostBackGenTemplate(lineId, event.Postback)
+				replyTemplateMessage, err := bot.UserParsePostBackGenTemplate(lineId, event.Postback)
+				if err != nil {
+					log.Printf("UserParsePostBackGenTemplate error: %v", err)
+				}
 				if replyTemplateMessage != nil {
 					bot.LineReplyMessage(event.ReplyToken, replyTemplateMessage)
 				}
@@ -83,7 +86,10 @@ func LineWebHook(ctx *gin.Context) {
 					}
 				}
 			case linebot.EventTypePostback:
-				replyTemplateMessage := bot.GroupParsePostBackGenTemplate(lineId, event.Postback)
+				replyTemplateMessage, err := bot.GroupParsePostBackGenTemplate(lineId, event.Postback)
+				if err != nil {
+					log.Printf("GroupParsePostBackGenTemplate error: %v", err)
+				}
 				if replyTemplateMessage != nil {
 					bot.LineReplyMessage(event.ReplyToken, replyTemplateMessage)
 				}

@@ -2,38 +2,35 @@ package bot
 
 import (
 	"encoding/json"
-	"fmt"
 	"strings"
 
 	"github.com/line/line-bot-sdk-go/linebot"
+	"github.com/programzheng/black-key/config"
+	"github.com/programzheng/black-key/internal/helper"
 	log "github.com/sirupsen/logrus"
 )
 
 func UserParseTextGenTemplate(lineId LineID, text string) (interface{}, error) {
 	parseText := strings.Split(text, "|")
 
-	if len(parseText) == 1 {
-
-	}
 	switch parseText[0] {
-	// Line相關資訊
+	// Line相關ID資訊
 	case "資訊":
-		return linebot.NewTextMessage(fmt.Sprintf("RoomID:%v\nGroupID:%v\nUserID:%v", lineId.RoomID, lineId.GroupID, lineId.UserID)), nil
+		return getLineId(lineId)
 	case "我的大頭貼":
-		lineMember, err := botClient.GetGroupMemberProfile(lineId.GroupID, lineId.UserID).Do()
-		if err != nil {
-			return generateErrorTextMessage(), err
-		}
-		return linebot.NewImageMessage(lineMember.PictureURL, lineMember.PictureURL), nil
+		return getMemberLineAvatar(lineId)
 	case "所有提醒", "所有通知", "All TODO":
 		return getTodo(lineId)
 	case "提醒", "通知", "TODO":
 		return todo(lineId, text)
 	}
-	return linebot.NewTextMessage(text), nil
+	if helper.ConvertToBool(config.Cfg.GetString("LINE_MESSAGING_DEBUG")) {
+		return linebot.NewTextMessage(text), nil
+	}
+	return nil, nil
 }
 
-func UserParsePostBackGenTemplate(lineId LineID, postBack *linebot.Postback) interface{} {
+func UserParsePostBackGenTemplate(lineId LineID, postBack *linebot.Postback) (interface{}, error) {
 	data := []byte(postBack.Data)
 	lpba := LinePostBackAction{}
 	err := json.Unmarshal(data, &lpba)
@@ -45,5 +42,8 @@ func UserParsePostBackGenTemplate(lineId LineID, postBack *linebot.Postback) int
 	case "delete line notification":
 		return deleteTodoByPostBack(&lpba)
 	}
-	return nil
+	if helper.ConvertToBool(config.Cfg.GetString("LINE_MESSAGING_DEBUG")) {
+		return linebot.NewTextMessage(string(data)), nil
+	}
+	return nil, nil
 }
