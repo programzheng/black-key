@@ -1,7 +1,7 @@
 FROM golang:alpine AS builder
 WORKDIR /app
 COPY . /app
-RUN GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -ldflags="-w -s" main.go
+RUN GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -ldflags="-w -s" -o main ./cmd/run/run.go
 
 FROM alpine:latest AS runner
 WORKDIR /app
