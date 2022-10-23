@@ -31,24 +31,27 @@ func RunPushLineNotificationSchedule() {
 		if !canPush {
 			continue
 		}
-		switch ln.Type {
-		case string(linebot.MessageTypeText):
-			var tp linebot.TextMessage
-			data := []byte(ln.Template)
-			err := json.Unmarshal(data, &tp)
-			if err != nil {
-				log.Printf("pkg/job/line/todo RunPushLineNotificationSchedule json.Unmarshal error: %v", err)
-				return
-			}
-			pushID := getPushID(ln)
-			if pushID != "" {
-				err := bot.LinePushMessage(pushID, linebot.NewTextMessage(tp.Text))
-				if err != nil {
-					log.Printf("pkg/job/line/todo RunPushLineNotificationSchedule LinePushMessage error: %v", err)
-				}
-				err = afterPushLineNotification(ln)
-				if err != nil {
-					log.Printf("pkg/job/line/todo RunPushLineNotificationSchedule PermanentlyDelete error: %v", err)
+		tps := []interface{}{}
+		err := json.Unmarshal([]byte(ln.Template), &tps)
+		if err != nil {
+			log.Printf("pkg/job/line/todo RunPushLineNotificationSchedule json.Unmarshal tps error: %v", err)
+		}
+		for _, tp := range tps {
+			tpm := tp.(map[string]interface{})
+			t := tpm["type"].(string)
+			switch t {
+			case string(linebot.MessageTypeText):
+				pushID := getPushID(ln)
+				if pushID != "" {
+					text := tpm["text"].(string)
+					err := bot.LinePushMessage(pushID, linebot.NewTextMessage(text))
+					if err != nil {
+						log.Printf("pkg/job/line/todo RunPushLineNotificationSchedule LinePushMessage error: %v", err)
+					}
+					err = afterPushLineNotification(ln)
+					if err != nil {
+						log.Printf("pkg/job/line/todo RunPushLineNotificationSchedule PermanentlyDelete error: %v", err)
+					}
 				}
 			}
 		}
