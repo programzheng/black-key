@@ -188,25 +188,8 @@ func todo(lineId LineID, text string) (interface{}, error) {
 			), nil
 		}
 
-		templateJSONByte, err := linebot.NewTextMessage(replyText).MarshalJSON()
-		if err != nil {
-			return generateErrorTextMessage(), err
-		}
 		weekDays := strings.Join(helper.GetWeekDays(), ",")
-		pdtl := *tt
-		templateJSON := string(templateJSONByte)
-		ln := &bot.LineNotification{
-			Service:      "Messaging API",
-			PushCycle:    weekDays,
-			PushDateTime: pdtl,
-			Limit:        -1,
-			UserID:       lineId.UserID,
-			GroupID:      lineId.GroupID,
-			RoomID:       lineId.RoomID,
-			Type:         string(linebot.MessageTypeText),
-			Template:     templateJSON,
-		}
-		_, err = ln.Add()
+		_, err := createLineNotification(lineId, weekDays, *tt, -1, replyText)
 		if err != nil {
 			return generateErrorTextMessage(), err
 		}
@@ -224,25 +207,8 @@ func todo(lineId LineID, text string) (interface{}, error) {
 		wdens = append(wdens, wden)
 	}
 	if len(wdens) > 0 {
-		templateJSONByte, err := linebot.NewTextMessage(replyText).MarshalJSON()
-		if err != nil {
-			return generateErrorTextMessage(), err
-		}
-		pdtl := *tt
 		weekDays := strings.Join(wdens, ",")
-		templateJSON := string(templateJSONByte)
-		ln := &bot.LineNotification{
-			Service:      "Messaging API",
-			PushCycle:    weekDays,
-			PushDateTime: pdtl,
-			Limit:        -1,
-			UserID:       lineId.UserID,
-			GroupID:      lineId.GroupID,
-			RoomID:       lineId.RoomID,
-			Type:         string(linebot.MessageTypeText),
-			Template:     templateJSON,
-		}
-		_, err = ln.Add()
+		_, err = createLineNotification(lineId, weekDays, *tt, -1, replyText)
 		if err != nil {
 			return generateErrorTextMessage(), err
 		}
@@ -274,30 +240,39 @@ func todo(lineId LineID, text string) (interface{}, error) {
 		), nil
 	}
 
-	pdtl := dtt
-	templateJSONByte, err := linebot.NewTextMessage(replyText).MarshalJSON()
-	if err != nil {
-		return generateErrorTextMessage(), err
-	}
-	templateJSON := string(templateJSONByte)
-	ln := &bot.LineNotification{
-		Service:      "Messaging API",
-		PushCycle:    "specify",
-		PushDateTime: pdtl,
-		Limit:        1,
-		UserID:       lineId.UserID,
-		GroupID:      lineId.GroupID,
-		RoomID:       lineId.RoomID,
-		Type:         string(linebot.MessageTypeText),
-		Template:     templateJSON,
-	}
-	_, err = ln.Add()
+	_, err = createLineNotification(lineId, "specify", dtt, -1, replyText)
 	if err != nil {
 		return generateErrorTextMessage(), err
 	}
 
 	return linebot.NewTextMessage("設置完成將於" + date + "\n傳送訊息:" + replyText), nil
 
+}
+
+func createLineNotification(lineId LineID, pushCycle string, pushDateTime time.Time, limit int, replyText string) (*bot.LineNotification, error) {
+	templates := []interface{}{}
+	templates = append(templates, linebot.NewTextMessage(replyText))
+	templatesJSONByte, err := json.Marshal(templates)
+	if err != nil {
+		return nil, err
+	}
+	templatesJSON := string(templatesJSONByte)
+	ln := &bot.LineNotification{
+		Service:      "Messaging API",
+		PushCycle:    pushCycle,
+		PushDateTime: pushDateTime,
+		Limit:        1,
+		UserID:       lineId.UserID,
+		GroupID:      lineId.GroupID,
+		RoomID:       lineId.RoomID,
+		Type:         string(linebot.MessageTypeText),
+		Template:     templatesJSON,
+	}
+	result, err := ln.Add()
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
 }
 
 func getTimeByTimeString(ts string) (*time.Time, error) {
