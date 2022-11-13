@@ -1,6 +1,7 @@
 package bot
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -8,6 +9,7 @@ import (
 
 	underscore "github.com/ahl5esoft/golang-underscore"
 	"github.com/line/line-bot-sdk-go/linebot"
+	"github.com/programzheng/black-key/internal/cache"
 	"github.com/programzheng/black-key/internal/model"
 	"github.com/programzheng/black-key/internal/model/bot"
 	"github.com/programzheng/black-key/internal/service/billing"
@@ -77,6 +79,8 @@ func rockPaperScissorTurn(lpba *LinePostBackAction) (interface{}, error) {
 	lineGroupID := lpba.Data["LineGroupID"].(string)
 	lineUserID := lpba.Data["LineUserID"].(string)
 	key := "rock-paper-scissors-" + lineGroupID
+	ctx := context.Background()
+	rdb := cache.GetRedisClient()
 	exist := rdb.Exists(ctx, key).Val()
 	if exist == 0 {
 		return linebot.NewTextMessage("請輸入\"猜拳\"開始賽局"), nil

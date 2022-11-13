@@ -1,6 +1,7 @@
 package bot
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"strings"
@@ -8,6 +9,7 @@ import (
 
 	"github.com/line/line-bot-sdk-go/linebot"
 	"github.com/programzheng/black-key/i18n"
+	"github.com/programzheng/black-key/internal/cache"
 	"github.com/programzheng/black-key/internal/helper"
 	"github.com/programzheng/black-key/internal/model"
 	"github.com/programzheng/black-key/internal/model/bot"
@@ -296,6 +298,8 @@ func startRockPaperScissor(lineId LineID, text string) (interface{}, error) {
 	key := "rock-paper-scissors-" + lineId.GroupID
 	minutes := "5"
 	m, _ := time.ParseDuration(minutes + "m")
+	rdb := cache.GetRedisClient()
+	ctx := context.Background()
 	exist := rdb.Exists(ctx, key).Val()
 	if exist > 0 {
 		return rockPaperScissorsTemplate(lineId, "已有猜拳正在進行中", minutes), nil
