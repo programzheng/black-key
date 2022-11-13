@@ -251,30 +251,30 @@ func todo(lineId LineID, text string) (interface{}, error) {
 
 }
 
-func createLineNotification(lineId LineID, pushCycle string, pushDateTime time.Time, limit int, replyText string) (*bot.LineNotification, error) {
+func todos(lineId LineID, text string) (interface{}, error) {
+	parseText := strings.Split(text, "|")
+	if len(parseText) == 1 {
+		return setTodoHelper(), nil
+	}
+	dateTime := parseText[1]
+	replyText := parseText[2]
+
+	rdb := cache.GetRedisClient()
+	ctx := context.Background()
+	todosCacheKey := lineId.getTodosCacheKey()
 	templates := []interface{}{}
-	templates = append(templates, linebot.NewTextMessage(replyText))
+	templates = append(templates, generateLineMessagingTemplate(replyText))
 	templatesJSONByte, err := json.Marshal(templates)
 	if err != nil {
-		return nil, err
+		return generateErrorTextMessage(), err
 	}
 	templatesJSON := string(templatesJSONByte)
-	ln := &bot.LineNotification{
-		Service:      "Messaging API",
-		PushCycle:    pushCycle,
-		PushDateTime: pushDateTime,
-		Limit:        1,
-		UserID:       lineId.UserID,
-		GroupID:      lineId.GroupID,
-		RoomID:       lineId.RoomID,
-		Type:         string(linebot.MessageTypeText),
-		Template:     templatesJSON,
-	}
-	result, err := ln.Add()
+	err = rdb.HSet(ctx, todosCacheKey, "date_time", dateTime, "templates", templatesJSON).Err()
 	if err != nil {
-		return nil, err
+		return generateErrorTextMessage(), err
 	}
-	return result, nil
+
+	return linebot.NewTextMessage("設置將於" + dateTime + "\n傳送標題為:" + replyText + "\n請繼續輸入其他內容(例如:圖片)"), nil
 }
 
 func getTimeByTimeString(ts string) (*time.Time, error) {

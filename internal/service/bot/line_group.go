@@ -1,12 +1,10 @@
 package bot
 
 import (
-	"context"
 	"encoding/json"
 	"strings"
 
 	"github.com/programzheng/black-key/config"
-	"github.com/programzheng/black-key/internal/cache"
 	"github.com/programzheng/black-key/internal/helper"
 	"github.com/programzheng/black-key/internal/model/bot"
 
@@ -15,11 +13,18 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-var ctx = context.Background()
-var rdb = cache.GetRedisClient()
-
 func GroupParseTextGenTemplate(lineId LineID, text string) (interface{}, error) {
+	//before handle
+	replayResult, err := replayBeforeHandle(&lineId, text)
+	if err != nil {
+		return nil, err
+	}
+
 	parseText := strings.Split(text, "|")
+
+	if replayResult != nil {
+		return replayResult, nil
+	}
 
 	//功能說明
 	if len(parseText) == 1 {
@@ -55,7 +60,10 @@ func GroupParseTextGenTemplate(lineId LineID, text string) (interface{}, error) 
 		return getTodo(lineId)
 	case "提醒", "通知", "TODO":
 		return todo(lineId, text)
+	case "多提醒", "多通知":
+		return todos(lineId, text)
 	}
+
 	if helper.ConvertToBool(config.Cfg.GetString("LINE_MESSAGING_DEBUG")) {
 		return linebot.NewTextMessage(text), nil
 	}

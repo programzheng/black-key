@@ -1,6 +1,7 @@
 package bot
 
 import (
+	"encoding/json"
 	"fmt"
 	"reflect"
 
@@ -106,4 +107,28 @@ func billingAction(lineId LineID, amount int, title string, note string) (billin
 
 func generateErrorTextMessage() linebot.Message {
 	return linebot.NewTextMessage("系統錯誤，請重新再試或是通知管理員")
+}
+
+func (lineId *LineID) getHashKey() string {
+
+	b, err := json.Marshal(lineId)
+	if err != nil {
+		log.Errorf(
+			`LineID getHashKey error:%v,
+			UserID: %s,
+			GroupID: %s,
+			RoomID: %s
+			`,
+			err,
+			lineId.UserID,
+			lineId.GroupID,
+			lineId.RoomID)
+	}
+	j := string(b)
+
+	return helper.CreateMD5(j)
+}
+
+func (lineId *LineID) getTodosCacheKey() string {
+	return fmt.Sprintf("%s|%s", "TODOS", lineId.getHashKey())
 }
