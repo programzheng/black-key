@@ -47,7 +47,10 @@ func getGroupMemberLineAvatar(lineId LineID) (interface{}, error) {
 
 func setTodoHelper() interface{} {
 	t := &(i18n.Translation{})
-	s := t.Translate("LINE_Messaging_Notification_Helper")
+	s := t.Translate("LINE_Messaging_Todo_Notification_Helper")
+
+	return linebot.NewTextMessage(s)
+}
 
 	return linebot.NewTextMessage(s)
 }
