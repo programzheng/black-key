@@ -59,6 +59,13 @@ func appendTodos(lineId *LineID, input interface{}) (interface{}, error) {
 		}
 		templates = append(templates, linebot.NewTextMessage(value))
 		replayText = fmt.Sprintf("完成設定文字通知:%s，請輸入\"結束\"進行儲存", value)
+	case *linebot.MessageContentResponse:
+		imageMessage, err := getImageMessageAppendToTodos(lineId, input.(*linebot.MessageContentResponse))
+		if err != nil {
+			return generateErrorTextMessage(), err
+		}
+		templates = append(templates, imageMessage)
+		replayText = "完成設定圖片通知，請輸入\"結束\"進行儲存"
 	}
 	b, err := json.Marshal(templates)
 	if err != nil {
@@ -69,4 +76,16 @@ func appendTodos(lineId *LineID, input interface{}) (interface{}, error) {
 		return generateErrorTextMessage(), err
 	}
 	return linebot.NewTextMessage(replayText), nil
+}
+
+func getImageMessageAppendToTodos(
+	lineId *LineID,
+	messageContentResponse *linebot.MessageContentResponse,
+) (interface{}, error) {
+	fs, staticFile := messageContentResponseToStaticFile(messageContentResponse)
+
+	return linebot.NewImageMessage(
+		fs.GetHostURL()+"/"+staticFile.Name,
+		fs.GetHostURL()+"/"+staticFile.Name,
+	), nil
 }

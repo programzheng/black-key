@@ -19,12 +19,11 @@ func GroupParseTextGenTemplate(lineId LineID, text string) (interface{}, error) 
 	if err != nil {
 		return nil, err
 	}
-
-	parseText := strings.Split(text, "|")
-
 	if replayResult != nil {
 		return replayResult, nil
 	}
+
+	parseText := strings.Split(text, "|")
 
 	//功能說明
 	if len(parseText) == 1 {
@@ -68,6 +67,26 @@ func GroupParseTextGenTemplate(lineId LineID, text string) (interface{}, error) 
 		return linebot.NewTextMessage(text), nil
 	}
 	return nil, nil
+}
+
+func GroupHandleReceiveImageMessage(
+	lineId *LineID,
+	messageContentResponse *linebot.MessageContentResponse,
+) (interface{}, error) {
+	//before handle
+	replayResult, err := replayBeforeHandle(lineId, messageContentResponse)
+	if err != nil {
+		return nil, err
+	}
+	if replayResult != nil {
+		return replayResult, nil
+	}
+
+	fs, staticFile := messageContentResponseToStaticFile(messageContentResponse)
+	return linebot.NewImageMessage(
+		fs.GetHostURL()+"/"+staticFile.Name,
+		fs.GetHostURL()+"/"+staticFile.Name,
+	), nil
 }
 
 func GroupParsePostBackGenTemplate(lineId LineID, postBack *linebot.Postback) (interface{}, error) {

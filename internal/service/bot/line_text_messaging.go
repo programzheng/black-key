@@ -52,6 +52,10 @@ func setTodoHelper() interface{} {
 	return linebot.NewTextMessage(s)
 }
 
+func setTodosHelper() interface{} {
+	t := &(i18n.Translation{})
+	s := t.Translate("LINE_Messaging_Todos_Notification_Helper")
+
 	return linebot.NewTextMessage(s)
 }
 
@@ -257,7 +261,7 @@ func todo(lineId LineID, text string) (interface{}, error) {
 func todos(lineId LineID, text string) (interface{}, error) {
 	parseText := strings.Split(text, "|")
 	if len(parseText) == 1 {
-		return setTodoHelper(), nil
+		return setTodosHelper(), nil
 	}
 	dateTime := parseText[1]
 	replyText := parseText[2]
