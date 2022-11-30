@@ -198,7 +198,7 @@ func todo(lineId LineID, text string) (interface{}, error) {
 		}
 
 		weekDays := strings.Join(helper.GetWeekDays(), ",")
-		_, err := createLineNotification(lineId, weekDays, *tt, -1, replyText)
+		_, err := createLineNotificationByText(lineId, weekDays, *tt, -1, replyText)
 		if err != nil {
 			return generateErrorTextMessage(), err
 		}
@@ -217,7 +217,7 @@ func todo(lineId LineID, text string) (interface{}, error) {
 	}
 	if len(wdens) > 0 {
 		weekDays := strings.Join(wdens, ",")
-		_, err = createLineNotification(lineId, weekDays, *tt, -1, replyText)
+		_, err = createLineNotificationByText(lineId, weekDays, *tt, -1, replyText)
 		if err != nil {
 			return generateErrorTextMessage(), err
 		}
@@ -249,7 +249,7 @@ func todo(lineId LineID, text string) (interface{}, error) {
 		), nil
 	}
 
-	_, err = createLineNotification(lineId, "specify", dtt, -1, replyText)
+	_, err = createLineNotificationByText(lineId, "specify", dtt, -1, replyText)
 	if err != nil {
 		return generateErrorTextMessage(), err
 	}

@@ -43,7 +43,14 @@ func appendTodos(lineId *LineID, input interface{}) (interface{}, error) {
 			if err != nil {
 				return generateErrorTextMessage(), err
 			}
-			_, err = createLineNotificationByTemplatesJSON(*lineId, "specify", dtt, -1, templatesJSON)
+			_, err = createLineNotificationByTemplatesJSON(
+				*lineId,
+				"specify",
+				dtt,
+				-1,
+				"multi",
+				templatesJSON,
+			)
 			if err != nil {
 				return generateErrorTextMessage(), err
 			}

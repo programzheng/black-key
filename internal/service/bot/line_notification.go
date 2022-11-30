@@ -8,7 +8,13 @@ import (
 	"github.com/programzheng/black-key/internal/model/bot"
 )
 
-func createLineNotification(lineId LineID, pushCycle string, pushDateTime time.Time, limit int, replyText string) (*bot.LineNotification, error) {
+func createLineNotificationByText(
+	lineId LineID,
+	pushCycle string,
+	pushDateTime time.Time,
+	limit int,
+	replyText string,
+) (*bot.LineNotification, error) {
 	templates := []interface{}{}
 	templates = append(templates, generateLineMessagingTemplate(replyText))
 	templatesJSONByte, err := json.Marshal(templates)
@@ -17,10 +23,24 @@ func createLineNotification(lineId LineID, pushCycle string, pushDateTime time.T
 	}
 	templatesJSON := string(templatesJSONByte)
 
-	return createLineNotificationByTemplatesJSON(lineId, pushCycle, pushDateTime, limit, templatesJSON)
+	return createLineNotificationByTemplatesJSON(
+		lineId,
+		pushCycle,
+		pushDateTime,
+		limit,
+		string(linebot.MessageTypeText),
+		templatesJSON,
+	)
 }
 
-func createLineNotificationByTemplatesJSON(lineId LineID, pushCycle string, pushDateTime time.Time, limit int, templatesJSON string) (*bot.LineNotification, error) {
+func createLineNotificationByTemplatesJSON(
+	lineId LineID,
+	pushCycle string,
+	pushDateTime time.Time,
+	limit int,
+	t string,
+	templatesJSON string,
+) (*bot.LineNotification, error) {
 	ln := &bot.LineNotification{
 		Service:      "Messaging API",
 		PushCycle:    pushCycle,
@@ -29,7 +49,7 @@ func createLineNotificationByTemplatesJSON(lineId LineID, pushCycle string, push
 		UserID:       lineId.UserID,
 		GroupID:      lineId.GroupID,
 		RoomID:       lineId.RoomID,
-		Type:         string(linebot.MessageTypeText),
+		Type:         t,
 		Template:     templatesJSON,
 	}
 	result, err := ln.Add()
