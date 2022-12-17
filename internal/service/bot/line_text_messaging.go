@@ -72,13 +72,21 @@ func getTodo(lineId LineID) (interface{}, error) {
 		return linebot.NewTextMessage("沒有資料"), nil
 	}
 	carouselColumns := []*linebot.CarouselColumn{}
+
 	for _, ln := range lns {
-		var tp linebot.TextMessage
-		data := []byte(ln.Template)
-		err := json.Unmarshal(data, &tp)
+		tps := []interface{}{}
+		err := json.Unmarshal([]byte(ln.Template), &tps)
 		if err != nil {
-			log.Printf("pkg/service/bot/line_messaging getTodo json.Unmarshal error: %v", err)
-			return nil, err
+			log.Printf("internal/service/bot/line_text_messaging getTodo tps json.Unmarshal error: %v", err)
+		}
+		textTemplate, err := json.Marshal(tps[0])
+		if err != nil {
+			log.Printf("internal/service/bot/line_text_messaging getTodo first tps json.Marshal error: %v", err)
+		}
+		var tp linebot.TextMessage
+		err = json.Unmarshal(textTemplate, &tp)
+		if err != nil {
+			log.Printf("pkg/service/bot/line_messaging getTodo tp json.Unmarshal error: %v", err)
 		}
 		deletePostBackAction := LinePostBackAction{
 			Action: "delete line notification",
@@ -255,6 +263,10 @@ func todo(lineId LineID, text string) (interface{}, error) {
 	}
 
 	return linebot.NewTextMessage("設置完成將於" + date + "\n傳送訊息:" + replyText), nil
+
+}
+
+func setEveryDayTodo(lineId *LineID, text string) interface{} {
 
 }
 

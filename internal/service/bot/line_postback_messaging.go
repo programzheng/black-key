@@ -28,9 +28,17 @@ func deleteTodoByPostBack(lpba *LinePostBackAction) (interface{}, error) {
 			"刪除失敗",
 		), nil
 	}
+	tps := []interface{}{}
+	err = json.Unmarshal([]byte(ln.Template), &tps)
+	if err != nil {
+		log.Printf("internal/service/bot/line_postback_messaging deleteTodoByPostBack tps json.Unmarshal error: %v", err)
+	}
+	textTemplate, err := json.Marshal(tps[0])
+	if err != nil {
+		log.Printf("internal/service/bot/line_postback_messaging deleteTodoByPostBack first tps json.Marshal error: %v", err)
+	}
 	var tp linebot.TextMessage
-	data := []byte(ln.Template)
-	err = json.Unmarshal(data, &tp)
+	err = json.Unmarshal(textTemplate, &tp)
 	if err != nil {
 		log.Printf("pkg/service/bot/line_messaging deleteTodoByPostBack json.Unmarshal error: %v", err)
 		return nil, err
