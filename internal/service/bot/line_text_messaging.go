@@ -266,10 +266,6 @@ func todo(lineId LineID, text string) (interface{}, error) {
 
 }
 
-func setEveryDayTodo(lineId *LineID, text string) interface{} {
-
-}
-
 func todos(lineId LineID, text string) (interface{}, error) {
 	parseText := strings.Split(text, "|")
 	if len(parseText) == 1 {
