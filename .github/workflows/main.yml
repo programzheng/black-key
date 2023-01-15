@@ -22,7 +22,7 @@ jobs:
 
     - name: Testing
       run: |
-        go test -v .
+        go test -v ./...
 
     - name: Build binary
       run: |
