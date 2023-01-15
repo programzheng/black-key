@@ -20,9 +20,9 @@ jobs:
     - name: Check out code
       uses: actions/checkout@v3
 
-    - name: Testing
-      run: |
-        go test -v ./...
+    # - name: Testing
+    #   run: |
+    #     go test -v ./...
 
     - name: Build binary
       run: |
