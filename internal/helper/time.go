@@ -2,6 +2,7 @@ package helper
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	log "github.com/sirupsen/logrus"
@@ -10,6 +11,15 @@ import (
 const Iso8601 = "2006-01-02"
 const Yyyymmddhhmmss = "2006/01/02 15:04:05"
 const Rfc2822 = "Mon Jan 02 15:04:05 -0700 2006"
+
+func GetTimeByTimeString(ts string) (*time.Time, error) {
+	dt := fmt.Sprintf("%s %s", GetNowDateTimeByFormat("2006-01-02"), ts)
+	pdtl, err := time.ParseInLocation("2006-01-02 15:04:05", dt, time.Now().Local().Location())
+	if err != nil {
+		return nil, err
+	}
+	return &pdtl, nil
+}
 
 func GetWeekDays() []string {
 	return []string{
@@ -87,6 +97,17 @@ func GetWeekDayShortTraditionalChineseByEnglish(english string) string {
 	return ""
 }
 
+func IsShortDateIsEveryDay(tc string) bool {
+	if tc == "每天" ||
+		tc == "每日" ||
+		tc == "every" ||
+		tc == "every day" ||
+		tc == "every-day" {
+		return true
+	}
+	return false
+}
+
 func IsShortDateOrTraditionalChineseShortDate(tc string) bool {
 	switch tc {
 	case "每天", "每日", "every-day", "every day", "every_day", "今天", "今日", "today", "明天", "明日", "tomorrow":
@@ -98,11 +119,17 @@ func IsShortDateOrTraditionalChineseShortDate(tc string) bool {
 func GetDateTimeByTraditionalChinese[T string | time.Time](t T) (time.Time, error) {
 	switch value := any(t).(type) {
 	case string:
-		switch value {
+		parseDate := strings.Split(value, " ")
+		shortTc := parseDate[0]
+		dateTime, err := GetTimeByTimeString(parseDate[1])
+		if err != nil {
+			return time.Time{}, err
+		}
+		switch shortTc {
 		case "每天", "每日":
-			return time.Time{}, nil
+			return *dateTime, nil
 		case "今天", "今日":
-			return time.Now(), nil
+			return *dateTime, nil
 		case "明天", "明日":
 			return time.Now().AddDate(0, 0, 1), nil
 		case "昨天", "昨日":

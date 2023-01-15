@@ -188,7 +188,7 @@ func todo(lineId LineID, text string) (interface{}, error) {
 		return generateErrorTextMessage(), nil
 	}
 
-	tt, err := getTimeByTimeString(parseDate[1])
+	tt, err := helper.GetTimeByTimeString(parseDate[1])
 	if err != nil {
 		return generateErrorTextMessage(), err
 	}
@@ -204,7 +204,7 @@ func todo(lineId LineID, text string) (interface{}, error) {
 			), nil
 		}
 
-		dtt, err := helper.GetDateTimeByTraditionalChinese(parseDate[0])
+		dtt, err := helper.GetDateTimeByTraditionalChinese(date)
 		if err != nil {
 			return generateErrorTextMessage(), err
 		}
@@ -320,8 +320,7 @@ func todos(lineId LineID, text string) (interface{}, error) {
 			), nil
 		}
 	} else {
-		parseDate := strings.Split(date, " ")
-		dtt, err := helper.GetDateTimeByTraditionalChinese(parseDate[0])
+		dtt, err := helper.GetDateTimeByTraditionalChinese(date)
 		if err != nil {
 			return generateErrorTextMessage(), err
 		}

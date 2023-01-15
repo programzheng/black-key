@@ -58,12 +58,17 @@ func appendTodos(lineId *LineID, input interface{}) (interface{}, error) {
 					return generateErrorTextMessage(), err
 				}
 			} else {
-				parseDate := strings.Split(date, " ")
-				dtt, err := helper.GetDateTimeByTraditionalChinese(parseDate[0])
+				dtt, err := helper.GetDateTimeByTraditionalChinese(date)
 				if err != nil {
 					return generateErrorTextMessage(), err
 				}
 				if dtt.IsZero() {
+					return generateErrorTextMessage(), fmt.Errorf(
+						"please setting the date time",
+					)
+				}
+				shortTc := strings.Split(date, " ")[0]
+				if helper.IsShortDateIsEveryDay(shortTc) {
 					weekDays := strings.Join(helper.GetWeekDays(), ",")
 					_, err = createLineNotificationByTemplatesJSON(
 						*lineId,
@@ -73,6 +78,9 @@ func appendTodos(lineId *LineID, input interface{}) (interface{}, error) {
 						"multi",
 						templatesJSON,
 					)
+					if err != nil {
+						return generateErrorTextMessage(), err
+					}
 				} else {
 					_, err = createLineNotificationByTemplatesJSON(
 						*lineId,
@@ -82,10 +90,6 @@ func appendTodos(lineId *LineID, input interface{}) (interface{}, error) {
 						"multi",
 						templatesJSON,
 					)
-				}
-
-				if err != nil {
-					return generateErrorTextMessage(), err
 				}
 			}
 
