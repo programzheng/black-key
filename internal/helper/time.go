@@ -1,6 +1,7 @@
 package helper
 
 import (
+	"fmt"
 	"time"
 
 	log "github.com/sirupsen/logrus"
@@ -86,9 +87,38 @@ func GetWeekDayShortTraditionalChineseByEnglish(english string) string {
 	return ""
 }
 
+func IsShortDateOrTraditionalChineseShortDate(tc string) bool {
+	switch tc {
+	case "每天", "每日", "every-day", "every day", "every_day", "今天", "今日", "today", "明天", "明日", "tomorrow":
+		return true
+	}
+	return false
+}
+
+func GetDateTimeByTraditionalChinese[T string | time.Time](t T) (time.Time, error) {
+	switch value := any(t).(type) {
+	case string:
+		switch value {
+		case "每天", "每日":
+			return time.Time{}, nil
+		case "今天", "今日":
+			return time.Now(), nil
+		case "明天", "明日":
+			return time.Now().AddDate(0, 0, 1), nil
+		case "昨天", "昨日":
+			return time.Now().AddDate(0, 0, -1), nil
+		}
+	case time.Time:
+		return value, nil
+	}
+	return time.Time{}, fmt.Errorf(
+		"GetDateTimeByTraditionalChinese: %v  does not conform", t,
+	)
+}
+
 func IsDateTime(s string) bool {
 	_, err := time.ParseInLocation("2006-01-02 15:04:05", s, time.Now().Local().Location())
-	return err != nil
+	return err == nil
 }
 
 func GetNowDateTimeByFormat(format string) string {

@@ -45,7 +45,7 @@ func createLineNotificationByTemplatesJSON(
 		Service:      "Messaging API",
 		PushCycle:    pushCycle,
 		PushDateTime: pushDateTime,
-		Limit:        1,
+		Limit:        limit,
 		UserID:       lineId.UserID,
 		GroupID:      lineId.GroupID,
 		RoomID:       lineId.RoomID,

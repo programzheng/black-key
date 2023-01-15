@@ -194,23 +194,66 @@ func todo(lineId LineID, text string) (interface{}, error) {
 	}
 
 	//every day
+	if helper.IsShortDateOrTraditionalChineseShortDate(parseDate[0]) {
+		if len(parseDate) == 1 {
+			return linebot.NewTextMessage(
+				fmt.Sprintf(
+					"需設置指定時間，例如: %s 23:59:59",
+					parseDate[0],
+				),
+			), nil
+		}
+
+		dtt, err := helper.GetDateTimeByTraditionalChinese(parseDate[0])
+		if err != nil {
+			return generateErrorTextMessage(), err
+		}
+		ccspm := checkCanSettingPushMessage(dtt)
+		if !ccspm {
+			return linebot.NewTextMessage(
+				"請設置未來的時間",
+			), nil
+		}
+		if dtt.IsZero() {
+			weekDays := strings.Join(helper.GetWeekDays(), ",")
+			_, err := createLineNotificationByText(
+				lineId,
+				weekDays,
+				time.Time{},
+				-1,
+				replyText,
+			)
+			if err != nil {
+				return generateErrorTextMessage(), err
+			}
+		} else {
+			_, err := createLineNotificationByText(
+				lineId,
+				"specify",
+				dtt,
+				1,
+				replyText,
+			)
+			if err != nil {
+				return generateErrorTextMessage(), err
+			}
+		}
+
+		return linebot.NewTextMessage(
+			fmt.Sprintf(
+				"設置完成將於%s %s\n傳送訊息:%s",
+				parseDate[0],
+				parseDate[1],
+				replyText,
+			),
+		), nil
+	}
 	if parseDate[0] == "每天" ||
 		parseDate[0] == "每日" ||
 		parseDate[0] == "every" ||
 		parseDate[0] == "every day" ||
 		parseDate[0] == "every-day" {
-		if len(parseDate) == 1 {
-			return linebot.NewTextMessage(
-				fmt.Sprintf("需設置指定時間，例如: %s 23:59:59", parseDate[0]),
-			), nil
-		}
 
-		weekDays := strings.Join(helper.GetWeekDays(), ",")
-		_, err := createLineNotificationByText(lineId, weekDays, *tt, -1, replyText)
-		if err != nil {
-			return generateErrorTextMessage(), err
-		}
-		return linebot.NewTextMessage("設置完成將於每天" + parseDate[1] + "\n傳送訊息:" + replyText), nil
 	}
 
 	//specify weekday
@@ -271,7 +314,32 @@ func todos(lineId LineID, text string) (interface{}, error) {
 	if len(parseText) == 1 {
 		return setTodosHelper(), nil
 	}
-	dateTime := parseText[1]
+	date := parseText[1]
+	if helper.IsDateTime(date) {
+		dtt, err := time.ParseInLocation("2006-01-02 15:04:05", date, time.Now().Local().Location())
+		if err != nil {
+			return generateErrorTextMessage(), err
+		}
+		ccspm := checkCanSettingPushMessage(dtt)
+		if !ccspm {
+			return linebot.NewTextMessage(
+				"請設置未來的時間",
+			), nil
+		}
+	} else {
+		parseDate := strings.Split(date, " ")
+		dtt, err := helper.GetDateTimeByTraditionalChinese(parseDate[0])
+		if err != nil {
+			return generateErrorTextMessage(), err
+		}
+		ccspm := checkCanSettingPushMessage(dtt)
+		if !ccspm {
+			return linebot.NewTextMessage(
+				"請設置未來的時間",
+			), nil
+		}
+	}
+
 	replyText := parseText[2]
 
 	rdb := cache.GetRedisClient()
@@ -284,12 +352,12 @@ func todos(lineId LineID, text string) (interface{}, error) {
 		return generateErrorTextMessage(), err
 	}
 	templatesJSON := string(templatesJSONByte)
-	err = rdb.HSet(ctx, todosCacheKey, "date_time", dateTime, "templates", templatesJSON).Err()
+	err = rdb.HSet(ctx, todosCacheKey, "date_time", date, "templates", templatesJSON).Err()
 	if err != nil {
 		return generateErrorTextMessage(), err
 	}
 
-	return linebot.NewTextMessage("設置將於" + dateTime + "\n傳送標題為:" + replyText + "\n請繼續輸入其他內容(例如:圖片)"), nil
+	return linebot.NewTextMessage("設置將於" + date + "\n傳送標題為:" + replyText + "\n請繼續輸入其他內容(例如:圖片)"), nil
 }
 
 func getTimeByTimeString(ts string) (*time.Time, error) {
@@ -302,6 +370,9 @@ func getTimeByTimeString(ts string) (*time.Time, error) {
 }
 
 func checkCanSettingPushMessage(t time.Time) bool {
+	if t.IsZero() {
+		return true
+	}
 	return time.Now().Before(t)
 }
 
