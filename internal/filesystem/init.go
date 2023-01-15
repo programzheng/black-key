@@ -1,30 +1,52 @@
 package filesystem
 
 import (
-	"mime/multipart"
+	"context"
+	"io"
+	"path/filepath"
 
 	"github.com/programzheng/black-key/config"
-
-	"github.com/gin-gonic/gin"
+	"github.com/programzheng/black-key/internal/helper"
 )
 
 type FileSystem interface {
 	Check()
 	GetSystem() string
 	GetPath() string
-	Upload(*gin.Context, *multipart.FileHeader) error
+	Upload(context.Context, string, io.Reader) *StaticFile
 	GetHostURL() string
 }
 
-var Driver FileSystem
+type StaticFile struct {
+	Reference   *string
+	System      string
+	Type        string
+	Path        string
+	Name        string
+	ThirdPatyID string
+}
 
-func init() {
-	system := config.Cfg.GetString("FILESYSTEM_DRIVER")
+func Create(system string) FileSystem {
+	if system == "" {
+		system = config.Cfg.GetString("FILESYSTEM_DRIVER")
+	}
+	var Driver FileSystem
 	switch system {
 	case "local":
-		Driver = Local{
-			System: config.Cfg.GetString("FILESYSTEM_DRIVER"),
-			Path:   config.Cfg.GetString("FILESYSTEM_LOCAL_PATH"),
+		Driver = &Local{
+			System: system,
+			Path:   filepath.Join(helper.RootPath, config.Cfg.GetString("FILESYSTEM_LOCAL_PATH")),
+		}
+	case "cloudinary":
+		Driver = &Cloudinary{
+			System: system,
+			Path:   "",
 		}
 	}
+
+	return Driver
+}
+
+func GetEmptyImageLink() string {
+	return "//" + config.Cfg.GetString("APP_URL") + "/files/image/empty"
 }

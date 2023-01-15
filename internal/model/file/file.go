@@ -3,7 +3,6 @@ package file
 import (
 	"time"
 
-	"github.com/programzheng/black-key/internal/filesystem"
 	"github.com/programzheng/black-key/internal/helper"
 	"github.com/programzheng/black-key/internal/model"
 
@@ -11,24 +10,17 @@ import (
 )
 
 type File struct {
-	ID        uint       `gorm:"primary_key" json:"-"`
-	HashID    string     `gorm:"unique"`
-	CreatedAt time.Time  `json:"-"`
-	UpdatedAt time.Time  `json:"-"`
-	DeletedAt *time.Time `sql:"index" json:"-"`
-	Reference string     `json:"-"`
-	System    string     `json:"-"`
-	Type      string
-	Path      string `json:"-"`
-	Name      string `json:"-"`
+	gorm.Model
+	HashID      string  `gorm:"unique"`
+	Reference   *string `json:"-"`
+	System      string  `json:"-"`
+	Type        string
+	Path        string `json:"-"`
+	Name        string `json:"-"`
+	ThirdPatyID string `json:"-"`
 }
 
 type Files []*File
-
-func (f *File) AfterFind() (err error) {
-	f.Path = filesystem.Driver.GetHostURL() + "/" + f.Path + f.Name
-	return
-}
 
 func (f *File) AfterCreate(tx *gorm.DB) (err error) {
 	// 設定給前端呼叫圖片的ID
@@ -39,25 +31,15 @@ func (f *File) AfterCreate(tx *gorm.DB) (err error) {
 }
 
 func (f File) Add() (File, error) {
-	model.Migrate(&f)
 	if err := model.DB.Save(&f).Error; err != nil {
 		return File{}, err
 	}
 	return f, nil
 }
 
-func Get(ids []interface{}, maps interface{}) (Files, error) {
+func Get(where map[string]interface{}) (Files, error) {
 	var files Files
-	if ids == nil {
-		err := model.DB.Where(maps).Find(&files).Error
-
-		if err != nil && err != gorm.ErrRecordNotFound {
-			return nil, err
-		}
-
-		return files, nil
-	}
-	err := model.DB.Where(ids).Where(maps).Find(&files).Error
+	err := model.DB.Where(where).Find(&files).Error
 
 	if err != nil && err != gorm.ErrRecordNotFound {
 		return nil, err
@@ -66,20 +48,13 @@ func Get(ids []interface{}, maps interface{}) (Files, error) {
 	return files, nil
 }
 
-func BatchUpdates(maps interface{}, updates interface{}) (Files, error) {
+func BatchUpdates(where map[string]interface{}, updates map[string]interface{}) (Files, error) {
 	var files Files
-	err := model.DB.Model(&files).Where(maps).Updates(updates).Find(&files).Error
+	err := model.DB.Model(&files).Where(where).Updates(updates).Find(&files).Error
 
 	if err != nil && err != gorm.ErrRecordNotFound {
 		return nil, err
 	}
-
-	return files, nil
-	// err := model.DB.Model(&files).Where(ids).Where(maps).Updates(updates).Find(&files).Error
-
-	// if err != nil && err != gorm.ErrRecordNotFound {
-	// 	return nil, err
-	// }
 
 	return files, nil
 }
@@ -89,4 +64,12 @@ func (f File) Update() (File, error) {
 		return File{}, err
 	}
 	return f, nil
+}
+
+func Delete(where map[string]interface{}) error {
+	err := model.DB.Where(where).Delete(File{}).Error
+	if err != nil {
+		return err
+	}
+	return nil
 }

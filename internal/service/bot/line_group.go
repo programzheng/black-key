@@ -1,12 +1,10 @@
 package bot
 
 import (
-	"context"
 	"encoding/json"
 	"strings"
 
 	"github.com/programzheng/black-key/config"
-	"github.com/programzheng/black-key/internal/cache"
 	"github.com/programzheng/black-key/internal/helper"
 	"github.com/programzheng/black-key/internal/model/bot"
 
@@ -15,10 +13,16 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-var ctx = context.Background()
-var rdb = cache.GetRedisClient()
-
 func GroupParseTextGenTemplate(lineId LineID, text string) (interface{}, error) {
+	//before handle
+	replayResult, err := replayBeforeHandle(&lineId, text)
+	if err != nil {
+		return nil, err
+	}
+	if replayResult != nil {
+		return replayResult, nil
+	}
+
 	parseText := strings.Split(text, "|")
 
 	//功能說明
@@ -55,11 +59,34 @@ func GroupParseTextGenTemplate(lineId LineID, text string) (interface{}, error) 
 		return getTodo(lineId)
 	case "提醒", "通知", "TODO":
 		return todo(lineId, text)
+	case "多提醒", "多通知":
+		return todos(lineId, text)
 	}
+
 	if helper.ConvertToBool(config.Cfg.GetString("LINE_MESSAGING_DEBUG")) {
 		return linebot.NewTextMessage(text), nil
 	}
 	return nil, nil
+}
+
+func GroupHandleReceiveImageMessage(
+	lineId *LineID,
+	messageContentResponse *linebot.MessageContentResponse,
+) (interface{}, error) {
+	//before handle
+	replayResult, err := replayBeforeHandle(lineId, messageContentResponse)
+	if err != nil {
+		return nil, err
+	}
+	if replayResult != nil {
+		return replayResult, nil
+	}
+
+	fs, staticFile := messageContentResponseToStaticFile(messageContentResponse)
+	return linebot.NewImageMessage(
+		fs.GetHostURL()+"/"+staticFile.Name,
+		fs.GetHostURL()+"/"+staticFile.Name,
+	), nil
 }
 
 func GroupParsePostBackGenTemplate(lineId LineID, postBack *linebot.Postback) (interface{}, error) {

@@ -12,8 +12,7 @@ services:
       env_file:
         - .env
       volumes:
-        - ${DATA_PATH_HOST}/${WORKSPACE}/${APP_NAME}/upload:/${WORKSPACE}/upload
-        - ${DATA_PATH_HOST}/${WORKSPACE}/${APP_NAME}/log:/${WORKSPACE}/log
+        - ./storage:/${WORKSPACE}/storage
       ports:
         - ${APP_PORT}:80
       networks:

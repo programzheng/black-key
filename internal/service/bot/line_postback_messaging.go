@@ -1,6 +1,7 @@
 package bot
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -8,6 +9,7 @@ import (
 
 	underscore "github.com/ahl5esoft/golang-underscore"
 	"github.com/line/line-bot-sdk-go/linebot"
+	"github.com/programzheng/black-key/internal/cache"
 	"github.com/programzheng/black-key/internal/model"
 	"github.com/programzheng/black-key/internal/model/bot"
 	"github.com/programzheng/black-key/internal/service/billing"
@@ -26,9 +28,17 @@ func deleteTodoByPostBack(lpba *LinePostBackAction) (interface{}, error) {
 			"刪除失敗",
 		), nil
 	}
+	tps := []interface{}{}
+	err = json.Unmarshal([]byte(ln.Template), &tps)
+	if err != nil {
+		log.Printf("internal/service/bot/line_postback_messaging deleteTodoByPostBack tps json.Unmarshal error: %v", err)
+	}
+	textTemplate, err := json.Marshal(tps[0])
+	if err != nil {
+		log.Printf("internal/service/bot/line_postback_messaging deleteTodoByPostBack first tps json.Marshal error: %v", err)
+	}
 	var tp linebot.TextMessage
-	data := []byte(ln.Template)
-	err = json.Unmarshal(data, &tp)
+	err = json.Unmarshal(textTemplate, &tp)
 	if err != nil {
 		log.Printf("pkg/service/bot/line_messaging deleteTodoByPostBack json.Unmarshal error: %v", err)
 		return nil, err
@@ -77,6 +87,8 @@ func rockPaperScissorTurn(lpba *LinePostBackAction) (interface{}, error) {
 	lineGroupID := lpba.Data["LineGroupID"].(string)
 	lineUserID := lpba.Data["LineUserID"].(string)
 	key := "rock-paper-scissors-" + lineGroupID
+	ctx := context.Background()
+	rdb := cache.GetRedisClient()
 	exist := rdb.Exists(ctx, key).Val()
 	if exist == 0 {
 		return linebot.NewTextMessage("請輸入\"猜拳\"開始賽局"), nil

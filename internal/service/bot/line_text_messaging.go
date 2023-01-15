@@ -1,6 +1,7 @@
 package bot
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"strings"
@@ -8,6 +9,7 @@ import (
 
 	"github.com/line/line-bot-sdk-go/linebot"
 	"github.com/programzheng/black-key/i18n"
+	"github.com/programzheng/black-key/internal/cache"
 	"github.com/programzheng/black-key/internal/helper"
 	"github.com/programzheng/black-key/internal/model"
 	"github.com/programzheng/black-key/internal/model/bot"
@@ -45,7 +47,14 @@ func getGroupMemberLineAvatar(lineId LineID) (interface{}, error) {
 
 func setTodoHelper() interface{} {
 	t := &(i18n.Translation{})
-	s := t.Translate("LINE_Messaging_Notification_Helper")
+	s := t.Translate("LINE_Messaging_Todo_Notification_Helper")
+
+	return linebot.NewTextMessage(s)
+}
+
+func setTodosHelper() interface{} {
+	t := &(i18n.Translation{})
+	s := t.Translate("LINE_Messaging_Todos_Notification_Helper")
 
 	return linebot.NewTextMessage(s)
 }
@@ -63,13 +72,21 @@ func getTodo(lineId LineID) (interface{}, error) {
 		return linebot.NewTextMessage("沒有資料"), nil
 	}
 	carouselColumns := []*linebot.CarouselColumn{}
+
 	for _, ln := range lns {
-		var tp linebot.TextMessage
-		data := []byte(ln.Template)
-		err := json.Unmarshal(data, &tp)
+		tps := []interface{}{}
+		err := json.Unmarshal([]byte(ln.Template), &tps)
 		if err != nil {
-			log.Printf("pkg/service/bot/line_messaging getTodo json.Unmarshal error: %v", err)
-			return nil, err
+			log.Printf("internal/service/bot/line_text_messaging getTodo tps json.Unmarshal error: %v", err)
+		}
+		textTemplate, err := json.Marshal(tps[0])
+		if err != nil {
+			log.Printf("internal/service/bot/line_text_messaging getTodo first tps json.Marshal error: %v", err)
+		}
+		var tp linebot.TextMessage
+		err = json.Unmarshal(textTemplate, &tp)
+		if err != nil {
+			log.Printf("pkg/service/bot/line_messaging getTodo tp json.Unmarshal error: %v", err)
 		}
 		deletePostBackAction := LinePostBackAction{
 			Action: "delete line notification",
@@ -177,40 +194,66 @@ func todo(lineId LineID, text string) (interface{}, error) {
 	}
 
 	//every day
+	if helper.IsShortDateOrTraditionalChineseShortDate(parseDate[0]) {
+		if len(parseDate) == 1 {
+			return linebot.NewTextMessage(
+				fmt.Sprintf(
+					"需設置指定時間，例如: %s 23:59:59",
+					parseDate[0],
+				),
+			), nil
+		}
+
+		dtt, err := helper.GetDateTimeByTraditionalChinese(parseDate[0])
+		if err != nil {
+			return generateErrorTextMessage(), err
+		}
+		ccspm := checkCanSettingPushMessage(dtt)
+		if !ccspm {
+			return linebot.NewTextMessage(
+				"請設置未來的時間",
+			), nil
+		}
+		if dtt.IsZero() {
+			weekDays := strings.Join(helper.GetWeekDays(), ",")
+			_, err := createLineNotificationByText(
+				lineId,
+				weekDays,
+				time.Time{},
+				-1,
+				replyText,
+			)
+			if err != nil {
+				return generateErrorTextMessage(), err
+			}
+		} else {
+			_, err := createLineNotificationByText(
+				lineId,
+				"specify",
+				dtt,
+				1,
+				replyText,
+			)
+			if err != nil {
+				return generateErrorTextMessage(), err
+			}
+		}
+
+		return linebot.NewTextMessage(
+			fmt.Sprintf(
+				"設置完成將於%s %s\n傳送訊息:%s",
+				parseDate[0],
+				parseDate[1],
+				replyText,
+			),
+		), nil
+	}
 	if parseDate[0] == "每天" ||
 		parseDate[0] == "每日" ||
 		parseDate[0] == "every" ||
 		parseDate[0] == "every day" ||
 		parseDate[0] == "every-day" {
-		if len(parseDate) == 1 {
-			return linebot.NewTextMessage(
-				fmt.Sprintf("需設置指定時間，例如: %s 23:59:59", parseDate[0]),
-			), nil
-		}
 
-		templateJSONByte, err := linebot.NewTextMessage(replyText).MarshalJSON()
-		if err != nil {
-			return generateErrorTextMessage(), err
-		}
-		weekDays := strings.Join(helper.GetWeekDays(), ",")
-		pdtl := *tt
-		templateJSON := string(templateJSONByte)
-		ln := &bot.LineNotification{
-			Service:      "Messaging API",
-			PushCycle:    weekDays,
-			PushDateTime: pdtl,
-			Limit:        -1,
-			UserID:       lineId.UserID,
-			GroupID:      lineId.GroupID,
-			RoomID:       lineId.RoomID,
-			Type:         string(linebot.MessageTypeText),
-			Template:     templateJSON,
-		}
-		_, err = ln.Add()
-		if err != nil {
-			return generateErrorTextMessage(), err
-		}
-		return linebot.NewTextMessage("設置完成將於每天" + parseDate[1] + "\n傳送訊息:" + replyText), nil
 	}
 
 	//specify weekday
@@ -224,25 +267,8 @@ func todo(lineId LineID, text string) (interface{}, error) {
 		wdens = append(wdens, wden)
 	}
 	if len(wdens) > 0 {
-		templateJSONByte, err := linebot.NewTextMessage(replyText).MarshalJSON()
-		if err != nil {
-			return generateErrorTextMessage(), err
-		}
-		pdtl := *tt
 		weekDays := strings.Join(wdens, ",")
-		templateJSON := string(templateJSONByte)
-		ln := &bot.LineNotification{
-			Service:      "Messaging API",
-			PushCycle:    weekDays,
-			PushDateTime: pdtl,
-			Limit:        -1,
-			UserID:       lineId.UserID,
-			GroupID:      lineId.GroupID,
-			RoomID:       lineId.RoomID,
-			Type:         string(linebot.MessageTypeText),
-			Template:     templateJSON,
-		}
-		_, err = ln.Add()
+		_, err = createLineNotificationByText(lineId, weekDays, *tt, -1, replyText)
 		if err != nil {
 			return generateErrorTextMessage(), err
 		}
@@ -274,30 +300,64 @@ func todo(lineId LineID, text string) (interface{}, error) {
 		), nil
 	}
 
-	pdtl := dtt
-	templateJSONByte, err := linebot.NewTextMessage(replyText).MarshalJSON()
-	if err != nil {
-		return generateErrorTextMessage(), err
-	}
-	templateJSON := string(templateJSONByte)
-	ln := &bot.LineNotification{
-		Service:      "Messaging API",
-		PushCycle:    "specify",
-		PushDateTime: pdtl,
-		Limit:        1,
-		UserID:       lineId.UserID,
-		GroupID:      lineId.GroupID,
-		RoomID:       lineId.RoomID,
-		Type:         string(linebot.MessageTypeText),
-		Template:     templateJSON,
-	}
-	_, err = ln.Add()
+	_, err = createLineNotificationByText(lineId, "specify", dtt, -1, replyText)
 	if err != nil {
 		return generateErrorTextMessage(), err
 	}
 
 	return linebot.NewTextMessage("設置完成將於" + date + "\n傳送訊息:" + replyText), nil
 
+}
+
+func todos(lineId LineID, text string) (interface{}, error) {
+	parseText := strings.Split(text, "|")
+	if len(parseText) == 1 {
+		return setTodosHelper(), nil
+	}
+	date := parseText[1]
+	if helper.IsDateTime(date) {
+		dtt, err := time.ParseInLocation("2006-01-02 15:04:05", date, time.Now().Local().Location())
+		if err != nil {
+			return generateErrorTextMessage(), err
+		}
+		ccspm := checkCanSettingPushMessage(dtt)
+		if !ccspm {
+			return linebot.NewTextMessage(
+				"請設置未來的時間",
+			), nil
+		}
+	} else {
+		parseDate := strings.Split(date, " ")
+		dtt, err := helper.GetDateTimeByTraditionalChinese(parseDate[0])
+		if err != nil {
+			return generateErrorTextMessage(), err
+		}
+		ccspm := checkCanSettingPushMessage(dtt)
+		if !ccspm {
+			return linebot.NewTextMessage(
+				"請設置未來的時間",
+			), nil
+		}
+	}
+
+	replyText := parseText[2]
+
+	rdb := cache.GetRedisClient()
+	ctx := context.Background()
+	todosCacheKey := lineId.getTodosCacheKey()
+	templates := []interface{}{}
+	templates = append(templates, generateLineMessagingTemplate(replyText))
+	templatesJSONByte, err := json.Marshal(templates)
+	if err != nil {
+		return generateErrorTextMessage(), err
+	}
+	templatesJSON := string(templatesJSONByte)
+	err = rdb.HSet(ctx, todosCacheKey, "date_time", date, "templates", templatesJSON).Err()
+	if err != nil {
+		return generateErrorTextMessage(), err
+	}
+
+	return linebot.NewTextMessage("設置將於" + date + "\n傳送標題為:" + replyText + "\n請繼續輸入其他內容(例如:圖片)"), nil
 }
 
 func getTimeByTimeString(ts string) (*time.Time, error) {
@@ -310,6 +370,9 @@ func getTimeByTimeString(ts string) (*time.Time, error) {
 }
 
 func checkCanSettingPushMessage(t time.Time) bool {
+	if t.IsZero() {
+		return true
+	}
 	return time.Now().Before(t)
 }
 
@@ -321,6 +384,8 @@ func startRockPaperScissor(lineId LineID, text string) (interface{}, error) {
 	key := "rock-paper-scissors-" + lineId.GroupID
 	minutes := "5"
 	m, _ := time.ParseDuration(minutes + "m")
+	rdb := cache.GetRedisClient()
+	ctx := context.Background()
 	exist := rdb.Exists(ctx, key).Val()
 	if exist > 0 {
 		return rockPaperScissorsTemplate(lineId, "已有猜拳正在進行中", minutes), nil

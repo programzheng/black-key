@@ -84,6 +84,26 @@ func LineWebHook(ctx *gin.Context) {
 					if replyTemplateMessage != nil {
 						bot.LineReplyMessage(event.ReplyToken, replyTemplateMessage)
 					}
+				case *linebot.ImageMessage:
+					messageContentResponse, err := bot.GetMessageContent(
+						message.ID,
+					)
+					if err != nil {
+						log.Printf("linebot.ImageMessage GetMessageContent error: %v", err)
+					}
+					replyTemplateMessage, err := bot.GroupHandleReceiveImageMessage(
+						&lineId,
+						messageContentResponse,
+					)
+					if err != nil {
+						log.Printf("GroupHandleReceiveImageMessage error: %v", err)
+					}
+
+					bot.LineReplyMessage(
+						event.ReplyToken,
+						replyTemplateMessage,
+					)
+
 				}
 			case linebot.EventTypePostback:
 				replyTemplateMessage, err := bot.GroupParsePostBackGenTemplate(lineId, event.Postback)

@@ -14,7 +14,7 @@ FROM build_base AS server_builder
 # Here we copy the rest of the source code
 COPY . .
 
-RUN go build -o main .
+RUN go build -o main ./cmd/run/run.go
 
 EXPOSE 80
 

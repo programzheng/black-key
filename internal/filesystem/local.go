@@ -1,15 +1,15 @@
 package filesystem
 
 import (
-	"mime/multipart"
+	"context"
+	"io"
 	"os"
 	"path/filepath"
 
 	"github.com/programzheng/black-key/config"
+	"github.com/programzheng/black-key/internal/helper"
 
 	log "github.com/sirupsen/logrus"
-
-	"github.com/gin-gonic/gin"
 )
 
 type Local struct {
@@ -17,11 +17,11 @@ type Local struct {
 	Path   string
 }
 
-func (l Local) Check() {
+func (lSystem *Local) Check() {
 	//檢查local路徑的資料夾有沒有存在
-	if _, err := os.Stat(l.Path); os.IsNotExist(err) {
-		//建立資料夾,權限設為0777(-rwxrwxrwx)
-		os.MkdirAll(l.Path, os.ModePerm)
+	if _, err := os.Stat(lSystem.Path); os.IsNotExist(err) {
+		//make nested directories
+		err = os.MkdirAll(lSystem.Path, 0700)
 		if err != nil {
 			log.Println("File system create directory error:", err)
 			return
@@ -29,24 +29,48 @@ func (l Local) Check() {
 	}
 }
 
-func (l Local) GetSystem() string {
-	return l.System
+func (lSystem *Local) GetSystem() string {
+	return lSystem.System
 }
 
-func (l Local) GetPath() string {
-	return l.Path
+func (lSystem *Local) GetPath() string {
+	return lSystem.Path
 }
 
-func (l Local) Upload(ctx *gin.Context, uploadFile *multipart.FileHeader) error {
+func (lSystem *Local) Upload(ctx context.Context, originFileName string, uploadFile io.Reader) *StaticFile {
 	//檔案位置
-	filePath := l.Path
+	filePath := lSystem.GetPath()
 	//檔案名稱
-	fileName := filepath.Base(uploadFile.Filename)
+	fileName := helper.CreateUuid()
+	//檔案副檔名
+	fileExtension := filepath.Ext(originFileName)
+	//完整檔案名稱
+	fileFullName := fileName + fileExtension
+	//檔案mimeType
+	fileType := helper.GetFileContentType(fileExtension)
+
 	//利用gin的上傳檔案function
-	err := ctx.SaveUploadedFile(uploadFile, filePath+"/"+fileName)
-	return err
+	out, err := os.Create(filePath + "/" + fileFullName)
+	if err != nil {
+		log.Printf("filesystem local upload error:%v", err)
+	}
+	defer out.Close()
+
+	_, err = io.Copy(out, uploadFile)
+	if err != nil {
+		log.Printf("filesystem local upload error:%v", err)
+	}
+
+	staticFile := StaticFile{
+		System: lSystem.GetSystem(),
+		Type:   fileType,
+		Path:   filePath,
+		Name:   fileFullName,
+	}
+
+	return &staticFile
 }
 
-func (l Local) GetHostURL() string {
-	return config.Cfg.GetString("APP_URL")
+func (lSystem *Local) GetHostURL() string {
+	return config.Cfg.GetString("ASSET_URL")
 }

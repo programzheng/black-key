@@ -1,12 +1,15 @@
 package bot
 
 import (
+	"context"
+	"encoding/json"
 	"fmt"
 	"reflect"
 
 	log "github.com/sirupsen/logrus"
 
 	"github.com/programzheng/black-key/config"
+	"github.com/programzheng/black-key/internal/filesystem"
 	"github.com/programzheng/black-key/internal/helper"
 	"github.com/programzheng/black-key/internal/model/bot"
 	"github.com/programzheng/black-key/internal/service/billing"
@@ -61,6 +64,10 @@ func LineReplyMessage(replyToken string, messages interface{}) {
 	log.Printf("LINE Message API reply message Request response:%v\n", basicResponse)
 }
 
+func GetMessageContent(messageId string) (*linebot.MessageContentResponse, error) {
+	return botClient.GetMessageContent(messageId).Do()
+}
+
 func LinePushMessage(toID string, messages interface{}) error {
 	var sendMessages []linebot.SendingMessage
 	rv := reflect.ValueOf(messages)
@@ -106,4 +113,37 @@ func billingAction(lineId LineID, amount int, title string, note string) (billin
 
 func generateErrorTextMessage() linebot.Message {
 	return linebot.NewTextMessage("系統錯誤，請重新再試或是通知管理員")
+}
+
+func (lineId *LineID) getHashKey() string {
+
+	b, err := json.Marshal(lineId)
+	if err != nil {
+		log.Errorf(
+			`LineID getHashKey error:%v,
+			UserID: %s,
+			GroupID: %s,
+			RoomID: %s
+			`,
+			err,
+			lineId.UserID,
+			lineId.GroupID,
+			lineId.RoomID)
+	}
+	j := string(b)
+
+	return helper.CreateMD5(j)
+}
+
+func (lineId *LineID) getTodosCacheKey() string {
+	return fmt.Sprintf("%s|%s", "TODOS", lineId.getHashKey())
+}
+
+func messageContentResponseToStaticFile(
+	messageContentResponse *linebot.MessageContentResponse,
+) (filesystem.FileSystem, *filesystem.StaticFile) {
+	ctx := context.Background()
+	tmpFileName := "tmp" + helper.GetFileExtensionByContentType(messageContentResponse.ContentType)
+	fs := filesystem.Create("")
+	return fs, fs.Upload(ctx, tmpFileName, messageContentResponse.Content)
 }

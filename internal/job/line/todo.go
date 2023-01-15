@@ -31,18 +31,16 @@ func RunPushLineNotificationSchedule() {
 		if !canPush {
 			continue
 		}
-		switch ln.Type {
-		case string(linebot.MessageTypeText):
-			var tp linebot.TextMessage
-			data := []byte(ln.Template)
-			err := json.Unmarshal(data, &tp)
-			if err != nil {
-				log.Printf("pkg/job/line/todo RunPushLineNotificationSchedule json.Unmarshal error: %v", err)
-				return
-			}
+		tps := []interface{}{}
+		err := json.Unmarshal([]byte(ln.Template), &tps)
+		if err != nil {
+			log.Printf("pkg/job/line/todo RunPushLineNotificationSchedule json.Unmarshal tps error: %v", err)
+		}
+		for _, tp := range tps {
+			tpm := tp.(map[string]interface{})
 			pushID := getPushID(ln)
 			if pushID != "" {
-				err := bot.LinePushMessage(pushID, linebot.NewTextMessage(tp.Text))
+				err := bot.LinePushMessage(pushID, convertJSONToLineMessage(tpm))
 				if err != nil {
 					log.Printf("pkg/job/line/todo RunPushLineNotificationSchedule LinePushMessage error: %v", err)
 				}
@@ -53,6 +51,20 @@ func RunPushLineNotificationSchedule() {
 			}
 		}
 	}
+}
+
+func convertJSONToLineMessage(templateMessage map[string]interface{}) linebot.Message {
+	switch templateMessage["type"].(string) {
+	case string(linebot.MessageTypeText):
+		return linebot.NewTextMessage(templateMessage["text"].(string))
+	case string(linebot.MessageTypeImage):
+		return linebot.NewImageMessage(
+			templateMessage["originalContentUrl"].(string),
+			templateMessage["previewImageUrl"].(string),
+		)
+	}
+
+	return nil
 }
 
 func RunRefreshLineNotificationSchedule() {

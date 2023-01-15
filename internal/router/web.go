@@ -10,5 +10,6 @@ func setRoute(router *gin.Engine) {
 
 	// router.LoadHTMLGlob("dist/view/*")
 
+	router.Static("static", "./storage/upload")
 	router.GET("files/:hash_id", file.Get)
 }
