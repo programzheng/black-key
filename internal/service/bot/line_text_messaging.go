@@ -248,13 +248,6 @@ func todo(lineId LineID, text string) (interface{}, error) {
 			),
 		), nil
 	}
-	if parseDate[0] == "每天" ||
-		parseDate[0] == "每日" ||
-		parseDate[0] == "every" ||
-		parseDate[0] == "every day" ||
-		parseDate[0] == "every-day" {
-
-	}
 
 	//specify weekday
 	wdtcs := strings.Split(parseDate[0], ",")
