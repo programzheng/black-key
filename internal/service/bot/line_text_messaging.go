@@ -220,7 +220,7 @@ func todo(lineId LineID, text string) (interface{}, error) {
 			_, err := createLineNotificationByText(
 				lineId,
 				weekDays,
-				time.Time{},
+				dtt,
 				-1,
 				replyText,
 			)
