@@ -127,13 +127,18 @@ func GetDateTimeByTraditionalChinese[T string | time.Time](t T) (time.Time, erro
 		}
 		switch shortTc {
 		case "每天", "每日":
-			return *dateTime, nil
+			//check if the specified date time is greater than the current date time
+			if CurrentDateTimeIsGreaterThanSpecifiedDateTime(dateTime) {
+				return (*dateTime).AddDate(0, 0, 1), nil
+			} else {
+				return *dateTime, nil
+			}
 		case "今天", "今日":
 			return *dateTime, nil
 		case "明天", "明日":
-			return time.Now().AddDate(0, 0, 1), nil
+			return (*dateTime).AddDate(0, 0, 1), nil
 		case "昨天", "昨日":
-			return time.Now().AddDate(0, 0, -1), nil
+			return (*dateTime).AddDate(0, 0, -1), nil
 		}
 	case time.Time:
 		return value, nil
@@ -141,6 +146,12 @@ func GetDateTimeByTraditionalChinese[T string | time.Time](t T) (time.Time, erro
 	return time.Time{}, fmt.Errorf(
 		"GetDateTimeByTraditionalChinese: %v  does not conform", t,
 	)
+}
+
+func CurrentDateTimeIsGreaterThanSpecifiedDateTime(t *time.Time) bool {
+	currentTime := time.Now()
+	fmt.Printf("%v", t)
+	return currentTime.After(*t)
 }
 
 func IsDateTime(s string) bool {

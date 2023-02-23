@@ -193,7 +193,6 @@ func todo(lineId LineID, text string) (interface{}, error) {
 		return generateErrorTextMessage(), err
 	}
 
-	//every day
 	if helper.IsShortDateOrTraditionalChineseShortDate(parseDate[0]) {
 		if len(parseDate) == 1 {
 			return linebot.NewTextMessage(
@@ -214,7 +213,7 @@ func todo(lineId LineID, text string) (interface{}, error) {
 				"請設置未來的時間",
 			), nil
 		}
-		if dtt.IsZero() {
+		if helper.IsShortDateIsEveryDay(parseDate[0]) {
 			weekDays := strings.Join(helper.GetWeekDays(), ",")
 			_, err := createLineNotificationByText(
 				lineId,
