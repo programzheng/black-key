@@ -97,7 +97,7 @@ func GetWeekDayShortTraditionalChineseByEnglish(english string) string {
 	return ""
 }
 
-func IsShortDateIsEveryDay(tc string) bool {
+func ShortDateIsEveryDay(tc string) bool {
 	if tc == "每天" ||
 		tc == "每日" ||
 		tc == "every" ||

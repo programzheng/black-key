@@ -68,7 +68,7 @@ func appendTodos(lineId *LineID, input interface{}) (interface{}, error) {
 					)
 				}
 				shortTc := strings.Split(date, " ")[0]
-				if helper.IsShortDateIsEveryDay(shortTc) {
+				if helper.ShortDateIsEveryDay(shortTc) {
 					weekDays := strings.Join(helper.GetWeekDays(), ",")
 					_, err = createLineNotificationByTemplatesJSON(
 						*lineId,

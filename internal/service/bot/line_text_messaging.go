@@ -215,7 +215,7 @@ func todo(lineId LineID, text string) (interface{}, error) {
 				"請設置未來的時間",
 			), nil
 		}
-		if helper.IsShortDateIsEveryDay(parseDate[0]) {
+		if helper.ShortDateIsEveryDay(parseDate[0]) {
 			weekDays := strings.Join(helper.GetWeekDays(), ",")
 			_, err := createLineNotificationByText(
 				lineId,
