@@ -120,11 +120,13 @@ func getTodo(lineId LineID) (interface{}, error) {
 
 			return r
 		}(ln)
-		title := fmt.Sprintf(
-			"%d, %s",
-			ln.ID,
-			tp.Text,
-		)
+		title := helper.TruncateString(
+			fmt.Sprintf(
+				"%d, %s",
+				ln.ID,
+				tp.Text,
+			),
+			40)
 		text := fmt.Sprintf(
 			"發送週期:%s \n下次發送時間:%s",
 			pushCycleString,
