@@ -150,7 +150,6 @@ func GetDateTimeByTraditionalChinese[T string | time.Time](t T) (time.Time, erro
 
 func CurrentDateTimeIsGreaterThanSpecifiedDateTime(t *time.Time) bool {
 	currentTime := time.Now()
-	fmt.Printf("%v", t)
 	return currentTime.After(*t)
 }
 
