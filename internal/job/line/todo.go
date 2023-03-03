@@ -8,8 +8,11 @@ import (
 	"time"
 
 	"github.com/line/line-bot-sdk-go/linebot"
+	"github.com/programzheng/black-key/config"
+	"github.com/programzheng/black-key/internal/helper"
 	model "github.com/programzheng/black-key/internal/model/bot"
 	"github.com/programzheng/black-key/internal/service/bot"
+	"github.com/programzheng/black-key/internal/service/selenium"
 	"golang.org/x/exp/slices"
 )
 
@@ -53,18 +56,50 @@ func RunPushLineNotificationSchedule() {
 	}
 }
 
-func convertJSONToLineMessage(templateMessage map[string]interface{}) linebot.Message {
+func convertJSONToLineMessage(templateMessage map[string]interface{}) []linebot.SendingMessage {
+	messages := []linebot.SendingMessage{}
 	switch templateMessage["type"].(string) {
 	case string(linebot.MessageTypeText):
-		return linebot.NewTextMessage(templateMessage["text"].(string))
+		messages = append(messages, linebot.NewTextMessage(templateMessage["text"].(string)))
+		//if is URL
+		messages = addonUrlScreenshotLineMessage(messages, templateMessage["text"].(string))
 	case string(linebot.MessageTypeImage):
-		return linebot.NewImageMessage(
+		messages = append(messages, linebot.NewImageMessage(
 			templateMessage["originalContentUrl"].(string),
 			templateMessage["previewImageUrl"].(string),
-		)
+		))
 	}
 
-	return nil
+	if len(messages) == 0 {
+		return nil
+	}
+
+	return messages
+}
+
+func addonUrlScreenshotLineMessage(messages []linebot.SendingMessage, url string) []linebot.SendingMessage {
+	if err := helper.ValidateURL(url); err != nil {
+		return messages
+	}
+
+	sc := selenium.CreateSeleniumClient(config.Cfg.GetString("SELENIUM_CLIENT_URL"))
+	if sc.GetURL() == "" {
+		return messages
+	}
+
+	response, err := sc.GetScreenshotByURL("POST", "api/v1/screenshot", &selenium.GetScreenshotByURLPayload{
+		URL: url,
+	})
+	if err != nil {
+		log.Printf("addonUrlScreenshotLineMessage error: %v", err)
+		return nil
+	}
+	screenshotURL := fmt.Sprintf("%s/%s/%s", sc.GetURL(), "screenshot/static", response.FileName)
+	messages = append(messages, linebot.NewImageMessage(
+		screenshotURL,
+		screenshotURL,
+	))
+	return messages
 }
 
 func RunRefreshLineNotificationSchedule() {
