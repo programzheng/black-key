@@ -2,6 +2,7 @@ package selenium
 
 import (
 	"bytes"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"mime/multipart"
@@ -30,6 +31,11 @@ func CreateSeleniumClient(url string) *SeleniumClient {
 
 func (sc *SeleniumClient) GetURL() string {
 	return sc.URL
+}
+
+func (sc *SeleniumClient) GetDynamicScreenshotByURL(url string) string {
+	encodeURL := base64.URLEncoding.EncodeToString([]byte(url))
+	return fmt.Sprintf("%s/screenshot/dynamic/%s", sc.GetURL(), encodeURL)
 }
 
 func (sc *SeleniumClient) GetScreenshotByURL(method string, path string, pl *GetScreenshotByURLPayload) (*GetScreenshotByURLResponse, error) {

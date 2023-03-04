@@ -87,14 +87,7 @@ func addonUrlScreenshotLineMessage(messages []linebot.SendingMessage, url string
 		return messages
 	}
 
-	response, err := sc.GetScreenshotByURL("POST", "api/v1/screenshot", &selenium.GetScreenshotByURLPayload{
-		URL: url,
-	})
-	if err != nil {
-		log.Printf("addonUrlScreenshotLineMessage error: %v", err)
-		return nil
-	}
-	screenshotURL := fmt.Sprintf("%s/%s/%s", sc.GetURL(), "screenshot/static", response.FileName)
+	screenshotURL := sc.GetDynamicScreenshotByURL(url)
 	messages = append(messages, linebot.NewImageMessage(
 		screenshotURL,
 		screenshotURL,
