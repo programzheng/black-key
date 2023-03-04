@@ -78,7 +78,7 @@ func convertJSONToLineMessage(templateMessage map[string]interface{}) []linebot.
 }
 
 func addonUrlScreenshotLineMessage(messages []linebot.SendingMessage, url string) []linebot.SendingMessage {
-	if err := helper.ValidateURL(url); err != nil {
+	if !helper.ValidateURL(url) {
 		return messages
 	}
 
