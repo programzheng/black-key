@@ -11,22 +11,37 @@ import (
 )
 
 func UserParseTextGenTemplate(lineId LineID, text string) (interface{}, error) {
+	//before handle
+	replayResult, err := replayBeforeHandle(&lineId, text)
+	if err != nil {
+		return nil, err
+	}
+	if replayResult != nil {
+		return replayResult, nil
+	}
+
 	parseText := strings.Split(text, "|")
 
-	switch parseText[0] {
-	// Line相關ID資訊
-	case "資訊":
-		return getLineId(lineId)
-	case "我的大頭貼":
-		return getMemberLineAvatar(lineId)
-	case "所有提醒", "所有通知", "All TODO":
-		return getTodo(lineId)
-	case "提醒", "通知", "TODO":
-		return todo(lineId, text)
+	strategies := []TextParsingStrategy{
+		&InfoStrategy{},
+		&BillingStrategy{},
+		&MemberLineAvatarStrategy{},
+		&RockPaperScissorStrategy{},
+		&TodoStrategy{},
+		&DefaultStrategy{},
 	}
-	if helper.ConvertToBool(config.Cfg.GetString("LINE_MESSAGING_DEBUG")) {
-		return linebot.NewTextMessage(text), nil
+	actionText := parseText[0]
+
+	for _, strategy := range strategies {
+		result, err := strategy.Execute(lineId, actionText)
+		if err != nil {
+			return nil, err
+		}
+		if result != nil {
+			return result, nil
+		}
 	}
+
 	return nil, nil
 }
 

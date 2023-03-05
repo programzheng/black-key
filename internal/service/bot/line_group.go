@@ -25,47 +25,26 @@ func GroupParseTextGenTemplate(lineId LineID, text string) (interface{}, error) 
 
 	parseText := strings.Split(text, "|")
 
-	//功能說明
-	if len(parseText) == 1 {
-		switch parseText[0] {
-		case "c helper", "記帳說明", "記帳":
-			return linebot.NewTextMessage("*記帳*\n將按照群組人數去做平均計算，使用記帳請使用以下格式輸入\n\"記帳|標題|總金額|備註\"\n例如:\n記帳|生日聚餐|1234|本人生日"), nil
-		case "c list helper", "記帳列表說明":
-			return linebot.NewTextMessage("*記帳列表*\n將回傳記帳紀錄的列表，格式為:\n日期時間 標題|金額| 平均金額 |付款人|備註"), nil
-		case "c balance helper", "記帳結算說明", "結算說明":
-			return linebot.NewTextMessage("*記帳結算說明*\n將刪除記帳資料，格式為:\n記帳結算|日期(可選)"), nil
+	strategies := []TextParsingStrategy{
+		&InfoStrategy{},
+		&BillingStrategy{},
+		&GroupMemberLineAvatarStrategy{},
+		&RockPaperScissorStrategy{},
+		&TodoStrategy{},
+		&DefaultStrategy{},
+	}
+	actionText := parseText[0]
+
+	for _, strategy := range strategies {
+		result, err := strategy.Execute(lineId, actionText)
+		if err != nil {
+			return nil, err
+		}
+		if result != nil {
+			return result, nil
 		}
 	}
 
-	//功能
-	switch parseText[0] {
-	// Line相關資訊
-	case "資訊":
-		return getLineId(lineId)
-	// c list||記帳列表
-	case "c list", "記帳列表":
-		return getLineBillings(lineId)
-	// c||記帳|生日聚餐|1234|本人生日
-	case "c", "記帳":
-		return createBilling(lineId, text)
-	// 記帳結算
-	case "記帳結算", "結帳", "結算":
-		return getBills(lineId, text)
-	case "我的大頭貼":
-		return getGroupMemberLineAvatar(lineId)
-	case "猜拳", "石頭布剪刀", "剪刀石頭布", "rock-paper-scissors":
-		return startRockPaperScissor(lineId, text)
-	case "所有提醒", "所有通知", "All TODO":
-		return getTodo(lineId)
-	case "提醒", "通知", "TODO":
-		return todo(lineId, text)
-	case "多提醒", "多通知":
-		return todos(lineId, text)
-	}
-
-	if helper.ConvertToBool(config.Cfg.GetString("LINE_MESSAGING_DEBUG")) {
-		return linebot.NewTextMessage(text), nil
-	}
 	return nil, nil
 }
 

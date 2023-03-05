@@ -25,6 +25,18 @@ func getLineIdMap(lineId LineID) map[string]interface{} {
 	return lineIdMap
 }
 
+func getHelp(text string) (interface{}, error) {
+	switch text {
+	case "c helper", "記帳說明", "記帳":
+		return linebot.NewTextMessage("*記帳*\n將按照群組人數去做平均計算，使用記帳請使用以下格式輸入\n\"記帳|標題|總金額|備註\"\n例如:\n記帳|生日聚餐|1234|本人生日"), nil
+	case "c list helper", "記帳列表說明":
+		return linebot.NewTextMessage("*記帳列表*\n將回傳記帳紀錄的列表，格式為:\n日期時間 標題|金額| 平均金額 |付款人|備註"), nil
+	case "c balance helper", "記帳結算說明", "結算說明":
+		return linebot.NewTextMessage("*記帳結算說明*\n將刪除記帳資料，格式為:\n記帳結算|日期(可選)"), nil
+	}
+	return nil, nil
+}
+
 func getLineId(lineId LineID) (interface{}, error) {
 	return linebot.NewTextMessage(fmt.Sprintf("RoomID:%v\nGroupID:%v\nUserID:%v", lineId.RoomID, lineId.GroupID, lineId.UserID)), nil
 }
