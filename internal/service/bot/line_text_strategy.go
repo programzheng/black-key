@@ -1,6 +1,8 @@
 package bot
 
 import (
+	"strings"
+
 	"github.com/line/line-bot-sdk-go/linebot"
 	"github.com/programzheng/black-key/config"
 	"github.com/programzheng/black-key/internal/helper"
@@ -46,7 +48,8 @@ func (g *GroupMemberLineAvatarStrategy) Execute(lineId LineID, text string) (int
 type BillingStrategy struct{}
 
 func (s *BillingStrategy) Execute(lineId LineID, text string) (interface{}, error) {
-	switch text {
+	match := strings.Split(text, "|")[0]
+	switch match {
 	case "c list", "記帳列表":
 		return getLineBillings(lineId)
 	case "c", "記帳":
@@ -64,13 +67,14 @@ func (r *RockPaperScissorStrategy) Execute(lineId LineID, text string) (interfac
 	if text != "猜拳" && text != "石頭布剪刀" && text != "剪刀石頭布" && text != "rock-paper-scissors" {
 		return nil, nil
 	}
-	return startRockPaperScissor(lineId, text)
+	return startRockPaperScissor(lineId)
 }
 
 type TodoStrategy struct{}
 
 func (s *TodoStrategy) Execute(lineId LineID, text string) (interface{}, error) {
-	switch text {
+	match := strings.Split(text, "|")[0]
+	switch match {
 	case "所有提醒", "所有通知", "All TODO":
 		return getTodo(lineId)
 	case "提醒", "通知", "TODO":

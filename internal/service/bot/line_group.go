@@ -2,7 +2,6 @@ package bot
 
 import (
 	"encoding/json"
-	"strings"
 
 	"github.com/programzheng/black-key/config"
 	"github.com/programzheng/black-key/internal/helper"
@@ -23,9 +22,8 @@ func GroupParseTextGenTemplate(lineId LineID, text string) (interface{}, error) 
 		return replayResult, nil
 	}
 
-	parseText := strings.Split(text, "|")
-
 	strategies := []TextParsingStrategy{
+		&HelpStrategy{},
 		&InfoStrategy{},
 		&BillingStrategy{},
 		&GroupMemberLineAvatarStrategy{},
@@ -33,10 +31,9 @@ func GroupParseTextGenTemplate(lineId LineID, text string) (interface{}, error) 
 		&TodoStrategy{},
 		&DefaultStrategy{},
 	}
-	actionText := parseText[0]
 
 	for _, strategy := range strategies {
-		result, err := strategy.Execute(lineId, actionText)
+		result, err := strategy.Execute(lineId, text)
 		if err != nil {
 			return nil, err
 		}

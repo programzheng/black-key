@@ -381,7 +381,7 @@ func checkCanSettingPushMessage(t time.Time) bool {
 	return time.Now().Before(t)
 }
 
-func startRockPaperScissor(lineId LineID, text string) (interface{}, error) {
+func startRockPaperScissor(lineId LineID) (interface{}, error) {
 	groupMemberCount := getGroupMemberCount(lineId.GroupID)
 	// if groupMemberCount <= 1 {
 	// 	return linebot.NewTextMessage("此功能需要群組大於(包含)2人"), nil
