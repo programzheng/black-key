@@ -1,14 +1,15 @@
-package i18n
+package i18n_test
 
 import (
 	"testing"
 
-	"github.com/nicksnyder/go-i18n/v2/i18n"
+	externalI18n "github.com/nicksnyder/go-i18n/v2/i18n"
+	"github.com/programzheng/black-key/i18n"
 	"golang.org/x/text/language"
 )
 
 func TestNewI18nBundle(t *testing.T) {
-	_, err := newI18nBundle()
+	_, err := i18n.NewI18nBundle()
 	if err != nil {
 		t.Fatalf("TestNewI18nBundle %v", err)
 		return
@@ -17,7 +18,7 @@ func TestNewI18nBundle(t *testing.T) {
 }
 
 func TestNewZhHantI18nLocalizer(t *testing.T) {
-	_, err := NewI18nLocalizer(language.TraditionalChinese.String())
+	_, err := i18n.NewI18nLocalizer(language.TraditionalChinese.String())
 	if err != nil {
 		t.Fatalf("TestNewZhHantI18nLocalizer %v", err)
 		return
@@ -26,13 +27,13 @@ func TestNewZhHantI18nLocalizer(t *testing.T) {
 }
 
 func TestNewI18nLocalizerAndTranslate(t *testing.T) {
-	localizer, err := NewI18nLocalizer(language.TraditionalChinese.String())
+	localizer, err := i18n.NewI18nLocalizer(language.TraditionalChinese.String())
 	if err != nil {
 		t.Fatalf("TestNewZhHantI18nLocalizer %v", err)
 		return
 	}
-	test := localizer.MustLocalize(&i18n.LocalizeConfig{
-		DefaultMessage: &i18n.Message{
+	test := localizer.MustLocalize(&externalI18n.LocalizeConfig{
+		DefaultMessage: &externalI18n.Message{
 			ID:          "Test",
 			Description: "test",
 			Other:       "test",
@@ -42,6 +43,6 @@ func TestNewI18nLocalizerAndTranslate(t *testing.T) {
 }
 
 func TestTranslate(t *testing.T) {
-	test := (&Translation{}).Translate("Test")
+	test := (&i18n.Translation{}).Translate("Test")
 	t.Logf("TestTranslate %s", test)
 }

@@ -5,9 +5,7 @@ import (
 
 	"github.com/programzheng/black-key/config"
 	"github.com/programzheng/black-key/internal/helper"
-	"github.com/programzheng/black-key/internal/model/bot"
 
-	underscore "github.com/ahl5esoft/golang-underscore"
 	"github.com/line/line-bot-sdk-go/linebot"
 	log "github.com/sirupsen/logrus"
 )
@@ -85,37 +83,4 @@ func GroupParsePostBackGenTemplate(lineId LineID, postBack *linebot.Postback) (i
 		return linebot.NewTextMessage(string(data)), nil
 	}
 	return nil, nil
-}
-
-func getDistinctByUserID(lbs []bot.LineBilling) map[string]string {
-	//user id line member display name
-	dstByUserID := make(map[string]string, 0)
-	underscore.Chain(lbs).DistinctBy("UserID").SelectMany(func(lb bot.LineBilling, _ int) map[string]string {
-		dst := make(map[string]string)
-		lineMember, err := botClient.GetGroupMemberProfile(lb.GroupID, lb.UserID).Do()
-		if err != nil {
-			dst[lb.UserID] = "Unknow"
-			return dst
-		}
-		dst[lb.UserID] = lineMember.DisplayName
-		return dst
-	}).Value(&dstByUserID)
-
-	return dstByUserID
-}
-
-func getGroupMemberCount(groupID string) int {
-	groupMemberCount, err := botClient.GetGroupMemberCount(groupID).Do()
-	if err != nil {
-		log.Fatal("line messaging api get group member count error:", err)
-	}
-	return groupMemberCount.Count
-}
-func calculateAmount(groupID string, amount float64) (float64, int) {
-	//預設平均計算基數
-	amountAvgBase := 3.0
-	groupMemberCount := getGroupMemberCount(groupID)
-	amountAvgBase = helper.ConvertToFloat64(groupMemberCount)
-	amountAvg := amount / amountAvgBase
-	return amountAvg, groupMemberCount
 }

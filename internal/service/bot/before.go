@@ -90,6 +90,9 @@ func appendTodos(lineId *LineID, input interface{}) (interface{}, error) {
 						"multi",
 						templatesJSON,
 					)
+					if err != nil {
+						return generateErrorTextMessage(), err
+					}
 				}
 			}
 

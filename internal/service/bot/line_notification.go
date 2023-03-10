@@ -16,7 +16,7 @@ func createLineNotificationByText(
 	replyText string,
 ) (*bot.LineNotification, error) {
 	templates := []interface{}{}
-	templates = append(templates, generateLineMessagingTemplate(replyText))
+	templates = append(templates, linebot.NewTextMessage(replyText))
 	templatesJSONByte, err := json.Marshal(templates)
 	if err != nil {
 		return nil, err
@@ -57,13 +57,4 @@ func createLineNotificationByTemplatesJSON(
 		return nil, err
 	}
 	return result, nil
-}
-
-func generateLineMessagingTemplate(input interface{}) interface{} {
-	switch value := input.(type) {
-	case string:
-		return linebot.NewTextMessage(value)
-	}
-
-	return nil
 }

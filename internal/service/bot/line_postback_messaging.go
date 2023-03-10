@@ -3,7 +3,6 @@ package bot
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"strings"
 
@@ -11,14 +10,14 @@ import (
 	"github.com/line/line-bot-sdk-go/linebot"
 	"github.com/programzheng/black-key/internal/cache"
 	"github.com/programzheng/black-key/internal/model"
-	"github.com/programzheng/black-key/internal/model/bot"
+	modelBot "github.com/programzheng/black-key/internal/model/bot"
 	"github.com/programzheng/black-key/internal/service/billing"
 	log "github.com/sirupsen/logrus"
 )
 
 func deleteTodoByPostBack(lpba *LinePostBackAction) (interface{}, error) {
 	id := uint(lpba.Data["ID"].(float64))
-	ln, err := bot.LineNotificationFirstByID(id)
+	ln, err := modelBot.LineNotificationFirstByID(id)
 	if err != nil {
 		return nil, err
 	}
@@ -54,13 +53,13 @@ func bill(lineId LineID, lpba *LinePostBackAction) (interface{}, error) {
 	}
 	date := lpba.Data["Date"].(string)
 	lineIdMap := getLineIdMap(lineId)
-	var lbs []bot.LineBilling
+	var lbs []LineBilling
 	err := model.DB.Where(lineIdMap).Where("updated_at < ?", date).Preload("Billing").Find(&lbs).Error
 	if err != nil {
 		log.Fatalf("line group GroupParsePostBackGenTemplate 結算 Get LineBilling failed: %v", err)
 	}
 	memberName := "Unknow"
-	lineMember, _ := botClient.GetGroupMemberProfile(lineId.GroupID, lineId.UserID).Do()
+	lineMember, _ := GetGroupMemberProfile(lineId.GroupID, lineId.UserID)
 	memberName = lineMember.DisplayName
 	if len(lbs) == 0 {
 		return linebot.NewTextMessage(fmt.Sprintf("%v:%v以前沒有記帳紀錄哦", memberName, date)), nil
@@ -96,31 +95,31 @@ func rockPaperScissorTurn(lpba *LinePostBackAction) (interface{}, error) {
 	action := lpba.Data["Action"].(string)
 	if ok, _ := rdb.SIsMember(ctx, key, lineUserID+"-out").Result(); ok {
 		memberName := "Unknow"
-		lineMember, _ := botClient.GetGroupMemberProfile(lineGroupID, lineUserID).Do()
+		lineMember, _ := GetGroupMemberProfile(lineGroupID, lineUserID)
 		memberName = lineMember.DisplayName
 		return linebot.NewTextMessage(memberName + "已出局"), nil
 	}
 	if ok, _ := rdb.SIsMember(ctx, key, lineUserID+"-rock").Result(); ok {
 		memberName := "Unknow"
-		lineMember, _ := botClient.GetGroupMemberProfile(lineGroupID, lineUserID).Do()
+		lineMember, _ := GetGroupMemberProfile(lineGroupID, lineUserID)
 		memberName = lineMember.DisplayName
 		return linebot.NewTextMessage(memberName + "已出過"), nil
 	}
 	if ok, _ := rdb.SIsMember(ctx, key, lineUserID+"-paper").Result(); ok {
 		memberName := "Unknow"
-		lineMember, _ := botClient.GetGroupMemberProfile(lineGroupID, lineUserID).Do()
+		lineMember, _ := GetGroupMemberProfile(lineGroupID, lineUserID)
 		memberName = lineMember.DisplayName
 		return linebot.NewTextMessage(memberName + "已出過"), nil
 	}
 	if ok, _ := rdb.SIsMember(ctx, key, lineUserID+"-scissors").Result(); ok {
 		memberName := "Unknow"
-		lineMember, _ := botClient.GetGroupMemberProfile(lineGroupID, lineUserID).Do()
+		lineMember, _ := GetGroupMemberProfile(lineGroupID, lineUserID)
 		memberName = lineMember.DisplayName
 		return linebot.NewTextMessage(memberName + "已出過"), nil
 	}
 	es, err := rdb.SMembers(ctx, key).Result()
 	if err != nil {
-		return nil, errors.New(fmt.Sprintf("get a rock-paper-scissors set error:%v", err))
+		return nil, fmt.Errorf("get a rock-paper-scissors set error:%v", err)
 	}
 	numberOfPeople := 4
 	//判斷結果
@@ -137,7 +136,7 @@ func rockPaperScissorTurn(lpba *LinePostBackAction) (interface{}, error) {
 			if len(result) > 1 {
 				currentMemberName := "Unknow"
 				oldUserId := result[0]
-				currentLineMember, err := botClient.GetGroupMemberProfile(lineGroupID, oldUserId).Do()
+				currentLineMember, err := GetGroupMemberProfile(lineGroupID, oldUserId)
 				if err == nil {
 					currentMemberName = currentLineMember.DisplayName
 				}
@@ -148,11 +147,11 @@ func rockPaperScissorTurn(lpba *LinePostBackAction) (interface{}, error) {
 				if winCount == 0 {
 					err = rdb.SRem(ctx, key, s).Err()
 					if err != nil {
-						return nil, errors.New(fmt.Sprintf("rock-paper-scissors out rem error:%v", err))
+						return nil, fmt.Errorf("rock-paper-scissors out rem error:%v", err)
 					}
 					err = rdb.SAdd(ctx, key, oldUserId+"-out").Err()
 					if err != nil {
-						return nil, errors.New(fmt.Sprintf("rock-paper-scissors out add error:%v", err))
+						return nil, fmt.Errorf("rock-paper-scissors out add error:%v", err)
 					}
 					outBuilder.WriteString(currentMemberName + "出局\n")
 					//有獲勝者
@@ -163,7 +162,7 @@ func rockPaperScissorTurn(lpba *LinePostBackAction) (interface{}, error) {
 					tieCount++
 					err = rdb.SRem(ctx, key, s).Err()
 					if err != nil {
-						return nil, errors.New(fmt.Sprintf("rock-paper-scissors rem error:%v", err))
+						return nil, fmt.Errorf("rock-paper-scissors rem error:%v", err)
 					}
 				}
 				//流局
@@ -176,7 +175,7 @@ func rockPaperScissorTurn(lpba *LinePostBackAction) (interface{}, error) {
 		if end {
 			err = rdb.Del(ctx, key).Err()
 			if err != nil {
-				return nil, errors.New(fmt.Sprintf("rock-paper-scissors is end error:%v", err))
+				return nil, fmt.Errorf("rock-paper-scissors is end error:%v", err)
 			}
 		}
 		if everyBuilder.Len() > 0 {
@@ -192,7 +191,7 @@ func rockPaperScissorTurn(lpba *LinePostBackAction) (interface{}, error) {
 	}
 	err = rdb.SAdd(ctx, key, lineUserID+"-"+action).Err()
 	if err != nil {
-		return nil, errors.New(fmt.Sprintf("create a rock-paper-scissors error:%v", err))
+		return nil, fmt.Errorf("create a rock-paper-scissors error:%v", err)
 	}
 	return nil, nil
 }

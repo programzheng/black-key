@@ -16,6 +16,10 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+func generateErrorTextMessage() linebot.Message {
+	return linebot.NewTextMessage("系統錯誤，請重新再試或是通知管理員")
+}
+
 func getLineIdMap(lineId LineID) map[string]interface{} {
 	lineIdMap := make(map[string]interface{})
 	lineIdMap["room_id"] = lineId.RoomID
@@ -42,7 +46,7 @@ func getLineId(lineId LineID) (interface{}, error) {
 }
 
 func getMemberLineAvatar(lineId LineID) (interface{}, error) {
-	lineMember, err := botClient.GetProfile(lineId.UserID).Do()
+	lineMember, err := BotClient.GetProfile(lineId.UserID).Do()
 	if err != nil {
 		return generateErrorTextMessage(), err
 	}
@@ -50,7 +54,7 @@ func getMemberLineAvatar(lineId LineID) (interface{}, error) {
 }
 
 func getGroupMemberLineAvatar(lineId LineID) (interface{}, error) {
-	lineMember, err := botClient.GetGroupMemberProfile(lineId.GroupID, lineId.UserID).Do()
+	lineMember, err := GetGroupMemberProfile(lineId.GroupID, lineId.UserID)
 	if err != nil {
 		return generateErrorTextMessage(), err
 	}
@@ -173,20 +177,6 @@ func getTodo(lineId LineID) (interface{}, error) {
 	}
 
 	return messages, nil
-}
-
-func convertPushDateTime(pdt string) string {
-	s := strings.Split(pdt, "|")
-	if len(s) == 1 {
-		return pdt
-	}
-	period := s[0]
-	dateTime := s[1]
-	switch period {
-	case "Sunday,Monday,Tuesday,Wednesday,Thursday,Friday,Saturday":
-		return fmt.Sprintf("每天 %s", dateTime)
-	}
-	return ""
 }
 
 func todo(lineId LineID, text string) (interface{}, error) {
@@ -351,7 +341,7 @@ func todos(lineId LineID, text string) (interface{}, error) {
 	ctx := context.Background()
 	todosCacheKey := lineId.getTodosCacheKey()
 	templates := []interface{}{}
-	templates = append(templates, generateLineMessagingTemplate(replyText))
+	templates = append(templates, linebot.NewTextMessage(replyText))
 	templatesJSONByte, err := json.Marshal(templates)
 	if err != nil {
 		return generateErrorTextMessage(), err
@@ -365,15 +355,6 @@ func todos(lineId LineID, text string) (interface{}, error) {
 	return linebot.NewTextMessage("設置將於" + date + "\n傳送標題為:" + replyText + "\n請繼續輸入其他內容(例如:圖片)"), nil
 }
 
-func getTimeByTimeString(ts string) (*time.Time, error) {
-	dt := fmt.Sprintf("%s %s", helper.GetNowDateTimeByFormat("2006-01-02"), ts)
-	pdtl, err := time.ParseInLocation("2006-01-02 15:04:05", dt, time.Now().Local().Location())
-	if err != nil {
-		return nil, err
-	}
-	return &pdtl, nil
-}
-
 func checkCanSettingPushMessage(t time.Time) bool {
 	if t.IsZero() {
 		return true
@@ -382,7 +363,7 @@ func checkCanSettingPushMessage(t time.Time) bool {
 }
 
 func startRockPaperScissor(lineId LineID) (interface{}, error) {
-	groupMemberCount := getGroupMemberCount(lineId.GroupID)
+	groupMemberCount := GetGroupMemberCount(lineId.GroupID)
 	// if groupMemberCount <= 1 {
 	// 	return linebot.NewTextMessage("此功能需要群組大於(包含)2人"), nil
 	// }
@@ -416,9 +397,9 @@ func createBilling(lineId LineID, text string) (interface{}, error) {
 	if len(parseText) == 4 {
 		note = parseText[3]
 	}
-	billingAction(lineId, amount, title, note)
+	BillingAction(lineId, amount, title, note)
 	amountFloat64 := helper.ConvertToFloat64(amount)
-	amountAvg, amountAvgBase := calculateAmount(lineId.GroupID, amountFloat64)
+	amountAvg, amountAvgBase := CalculateAmount(lineId.GroupID, amountFloat64)
 	return linebot.NewTextMessage(title + ":記帳完成," + parseText[2] + "/" + helper.ConvertToString(int(amountAvgBase)) + " = " + "*" + helper.ConvertToString(amountAvg) + "*"), nil
 }
 
@@ -435,7 +416,7 @@ func getLineBillings(lineId LineID) (interface{}, error) {
 	if len(lbs) == 0 {
 		return linebot.NewTextMessage("目前沒有記帳紀錄哦！"), nil
 	}
-	dstByUserID := getDistinctByUserID(lbs)
+	dstByUserID := getDistinctByLineBillings(lbs)
 	listText := getLineBillingList(lineId, lbs, dstByUserID)
 	messages = append(messages, linebot.NewTextMessage(listText))
 	totalText := getLineBillingTotalAmount(lineId, lbs, dstByUserID)
@@ -449,7 +430,7 @@ func getLineBillingList(lineId LineID, lbs []bot.LineBilling, dstByUserID map[st
 	sbList.Grow(len(lbs))
 	for key, lb := range lbs {
 		var memberName string
-		amountAvg, amountAvgBase := calculateAmount(lineId.GroupID, helper.ConvertToFloat64(lb.Billing.Amount))
+		amountAvg, amountAvgBase := CalculateAmount(lineId.GroupID, helper.ConvertToFloat64(lb.Billing.Amount))
 		//check line member display name is exist
 		if _, ok := dstByUserID[lb.UserID]; ok {
 			memberName = dstByUserID[lb.UserID]
@@ -471,7 +452,7 @@ func getLineBillingTotalAmount(lineId LineID, lbs []bot.LineBilling, dstByUserID
 	var sbTotal strings.Builder
 	sbTotal.Grow(len(dstByUserID))
 	for _, lb := range lbs {
-		amountAvg, _ := calculateAmount(lineId.GroupID, helper.ConvertToFloat64(lb.Billing.Amount))
+		amountAvg, _ := CalculateAmount(lineId.GroupID, helper.ConvertToFloat64(lb.Billing.Amount))
 		if _, ok := dstByUserID[lb.UserID]; ok {
 			lbUserIDAmount[lb.UserID] = lbUserIDAmount[lb.UserID] + amountAvg
 		}
@@ -505,7 +486,7 @@ func getBills(lineId LineID, text string) (interface{}, error) {
 	if len(lbs) == 0 {
 		return linebot.NewTextMessage(fmt.Sprintf("%v以前沒有記帳紀錄哦！", date)), nil
 	}
-	dstByUserID := getDistinctByUserID(lbs)
+	dstByUserID := getDistinctByLineBillings(lbs)
 	listText := getLineBillingList(lineId, lbs, dstByUserID)
 	messages = append(messages, linebot.NewTextMessage(listText))
 
@@ -621,7 +602,7 @@ func conditionRockPaperScissors(target string, all []string, numberOfPeople int)
 
 // This feature is available only for verified or premium accounts
 func getGroupMemberIds(groupID string, continuationToken string) []string {
-	groupMemberIds, err := botClient.GetGroupMemberIDs(groupID, continuationToken).Do()
+	groupMemberIds, err := BotClient.GetGroupMemberIDs(groupID, continuationToken).Do()
 	if err != nil {
 		log.Fatal("line messaging api get group member ids error:", err)
 	}

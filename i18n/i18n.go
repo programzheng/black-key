@@ -18,7 +18,7 @@ type Translation struct {
 var LocaleFSPathForLoad string
 var LocaleFS embed.FS
 
-func newI18nBundle() (*i18n.Bundle, error) {
+func NewI18nBundle() (*i18n.Bundle, error) {
 	bundle := i18n.NewBundle(language.TraditionalChinese)
 	bundle.RegisterUnmarshalFunc("toml", toml.Unmarshal)
 	for _, lang := range []string{"zh-Hant"} {
@@ -31,8 +31,8 @@ func newI18nBundle() (*i18n.Bundle, error) {
 	return bundle, nil
 }
 
-func newI18nLocalizer(lang string) (*i18n.Localizer, error) {
-	b, err := newI18nBundle()
+func NewI18nLocalizer(lang string) (*i18n.Localizer, error) {
+	b, err := NewI18nBundle()
 	if err != nil {
 		return nil, err
 	}
@@ -43,7 +43,7 @@ func NewTranslation(lang string) (*Translation, error) {
 	if lang == "" {
 		lang = config.Cfg.GetString("DEFAULT_LANGUAGE")
 	}
-	l, err := newI18nLocalizer(lang)
+	l, err := NewI18nLocalizer(lang)
 	if err != nil {
 		log.Printf("i18.go NewTranslation error: %v", err)
 		return nil, err
