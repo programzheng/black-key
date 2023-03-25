@@ -1,7 +1,6 @@
 package bot
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"strings"
@@ -20,19 +19,22 @@ func replayBeforeHandle(lineId *LineID, input interface{}) (interface{}, error) 
 }
 
 func checkTodosExist(lineId *LineID) bool {
-	rdb := cache.GetRedisClient()
-	ctx := context.Background()
-	exist := rdb.Exists(ctx, lineId.getTodosCacheKey()).Val()
-
-	return exist != 0
+	cd, err := cache.GetCacheDriver("")
+	if err != nil {
+		return false
+	}
+	exist, err := cd.Exists(lineId.getTodosCacheKey())
+	return exist != 0 && err == nil
 }
 
 func appendTodos(lineId *LineID, input interface{}) (interface{}, error) {
-	rdb := cache.GetRedisClient()
-	ctx := context.Background()
-	templatesJSON := rdb.HGet(ctx, lineId.getTodosCacheKey(), "templates").Val()
+	cd, err := cache.GetCacheDriver("")
+	if err != nil {
+		return generateErrorTextMessage(), err
+	}
+	templatesJSON, _ := cd.HGet(lineId.getTodosCacheKey(), "templates")
 	templates := []interface{}{}
-	err := json.Unmarshal([]byte(templatesJSON), &templates)
+	err = json.Unmarshal([]byte(templatesJSON), &templates)
 	if err != nil {
 		return generateErrorTextMessage(), err
 	}
@@ -40,7 +42,7 @@ func appendTodos(lineId *LineID, input interface{}) (interface{}, error) {
 	switch value := input.(type) {
 	case string:
 		if value == "結束" {
-			date := rdb.HGet(ctx, lineId.getTodosCacheKey(), "date_time").Val()
+			date, _ := cd.HGet(lineId.getTodosCacheKey(), "date_time")
 			if helper.IsDateTime(date) {
 				dtt, err := time.ParseInLocation("2006-01-02 15:04:05", date, time.Now().Local().Location())
 				if err != nil {
@@ -96,11 +98,11 @@ func appendTodos(lineId *LineID, input interface{}) (interface{}, error) {
 				}
 			}
 
-			err = rdb.HDel(ctx, lineId.getTodosCacheKey(), "date_time", "templates").Err()
+			_, err = cd.HDel(lineId.getTodosCacheKey(), "date_time", "templates")
 			if err != nil {
 				return generateErrorTextMessage(), err
 			}
-			err = rdb.Del(ctx, lineId.getTodosCacheKey()).Err()
+			_, err = cd.Del(lineId.getTodosCacheKey())
 			if err != nil {
 				return generateErrorTextMessage(), err
 			}
@@ -120,7 +122,7 @@ func appendTodos(lineId *LineID, input interface{}) (interface{}, error) {
 	if err != nil {
 		return generateErrorTextMessage(), err
 	}
-	err = rdb.HSet(ctx, lineId.getTodosCacheKey(), "templates", string(b)).Err()
+	_, err = cd.HSet(lineId.getTodosCacheKey(), "templates", string(b))
 	if err != nil {
 		return generateErrorTextMessage(), err
 	}

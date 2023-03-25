@@ -1,7 +1,6 @@
 package bot
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"strings"
@@ -337,8 +336,10 @@ func todos(lineId LineID, text string) (interface{}, error) {
 
 	replyText := parseText[2]
 
-	rdb := cache.GetRedisClient()
-	ctx := context.Background()
+	cd, err := cache.GetCacheDriver("")
+	if err != nil {
+		return generateErrorTextMessage(), err
+	}
 	todosCacheKey := lineId.getTodosCacheKey()
 	templates := []interface{}{}
 	templates = append(templates, linebot.NewTextMessage(replyText))
@@ -347,7 +348,7 @@ func todos(lineId LineID, text string) (interface{}, error) {
 		return generateErrorTextMessage(), err
 	}
 	templatesJSON := string(templatesJSONByte)
-	err = rdb.HSet(ctx, todosCacheKey, "date_time", date, "templates", templatesJSON).Err()
+	_, err = cd.HSet(todosCacheKey, "date_time", date, "templates", templatesJSON)
 	if err != nil {
 		return generateErrorTextMessage(), err
 	}
@@ -370,17 +371,22 @@ func startRockPaperScissor(lineId LineID) (interface{}, error) {
 	key := "rock-paper-scissors-" + lineId.GroupID
 	minutes := "5"
 	m, _ := time.ParseDuration(minutes + "m")
-	rdb := cache.GetRedisClient()
-	ctx := context.Background()
-	exist := rdb.Exists(ctx, key).Val()
+	cd, err := cache.GetCacheDriver("")
+	if err != nil {
+		log.Fatalf("start a rock-paper-scissors get cache driver error:%v", err)
+	}
+	exist, err := cd.Exists(key)
+	if err != nil {
+		log.Fatalf("start a rock-paper-scissors exists error:%v", err)
+	}
 	if exist > 0 {
 		return rockPaperScissorsTemplate(lineId, "已有猜拳正在進行中", minutes), nil
 	}
-	err := rdb.SAdd(ctx, key, groupMemberCount).Err()
+	_, err = cd.SAdd(key, groupMemberCount)
 	if err != nil {
 		log.Fatalf("create a rock-paper-scissors error:%v", err)
 	}
-	err = rdb.Expire(ctx, key, m).Err()
+	_, err = cd.Expire(key, m)
 	if err != nil {
 		log.Fatalf("set expire rock-paper-scissors time error:%v", err)
 	}
