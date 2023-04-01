@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/programzheng/black-key/config"
-	_ "github.com/programzheng/black-key/config"
 	"github.com/programzheng/black-key/internal/helper"
 
 	"fmt"

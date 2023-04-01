@@ -1,4 +1,4 @@
-package bot
+package bot_test
 
 import (
 	"fmt"
@@ -7,12 +7,14 @@ import (
 
 	"github.com/programzheng/black-key/config"
 	"github.com/programzheng/black-key/internal/helper"
+	modelBot "github.com/programzheng/black-key/internal/model/bot"
+	serviceBot "github.com/programzheng/black-key/internal/service/bot"
 
 	underscore "github.com/ahl5esoft/golang-underscore"
 )
 
 func TestAdd(t *testing.T) {
-	lb := LineBilling{
+	lb := modelBot.LineBilling{
 		BillingID: 1,
 		GroupID:   "test",
 		UserID:    "test",
@@ -25,7 +27,7 @@ func TestAdd(t *testing.T) {
 }
 
 func TestGet(t *testing.T) {
-	lb := LineBilling{}
+	lb := modelBot.LineBilling{}
 	where := make(map[string]interface{})
 	not := make(map[string]interface{})
 	results, err := lb.Get(where, not)
@@ -40,7 +42,7 @@ func TestGet(t *testing.T) {
 }
 
 func TestGetDistinctByUserID(t *testing.T) {
-	lb := LineBilling{}
+	lb := modelBot.LineBilling{}
 	where := make(map[string]interface{})
 	not := make(map[string]interface{})
 	results, err := lb.Get(where, not)
@@ -52,7 +54,7 @@ func TestGetDistinctByUserID(t *testing.T) {
 	} else {
 		t.Errorf("fail")
 	}
-	dst := make([]LineBilling, 0)
+	dst := make([]modelBot.LineBilling, 0)
 	underscore.Chain(results).DistinctBy("UserID").Value(&dst)
 	var testUserID string
 	for _, v := range dst {
@@ -65,7 +67,7 @@ func TestGetDistinctByUserID(t *testing.T) {
 }
 
 func TestGetDistinctByUserIDAndLineMember(t *testing.T) {
-	lb := LineBilling{}
+	lb := modelBot.LineBilling{}
 	where := make(map[string]interface{})
 	not := make(map[string]interface{})
 	lbs, err := lb.Get(where, not)
@@ -78,9 +80,9 @@ func TestGetDistinctByUserIDAndLineMember(t *testing.T) {
 		t.Error("fail")
 	}
 	dstByUserID := make(map[string]string, 0)
-	underscore.Chain(lbs).DistinctBy("UserID").SelectMany(func(lb LineBilling, _ int) map[string]string {
+	underscore.Chain(lbs).DistinctBy("UserID").SelectMany(func(lb modelBot.LineBilling, _ int) map[string]string {
 		dst := make(map[string]string)
-		lineMember, err := botClient.GetGroupMemberProfile(lb.GroupID, lb.UserID).Do()
+		lineMember, err := serviceBot.GetGroupMemberProfile(lb.GroupID, lb.UserID)
 		if err != nil {
 			t.Log("line messaging api get group member profile group id:"+lb.GroupID+" user id:"+lb.UserID+" error:", err)
 			dst[lb.UserID] = "Unkonw"
@@ -93,9 +95,8 @@ func TestGetDistinctByUserIDAndLineMember(t *testing.T) {
 }
 
 func TestGetLineBillingList(t *testing.T) {
-	var testGroupID string
-	testGroupID = config.Cfg.GetString("TEST_GET_LINE_BILLING_LIST_GROUP_ID")
-	lb := LineBilling{}
+	testGroupID := config.Cfg.GetString("TEST_GET_LINE_BILLING_LIST_GROUP_ID")
+	lb := modelBot.LineBilling{}
 	where := make(map[string]interface{})
 	not := make(map[string]interface{})
 	lbs, err := lb.Get(where, not)
@@ -108,9 +109,9 @@ func TestGetLineBillingList(t *testing.T) {
 		t.Errorf("fail")
 	}
 	dstByUserID := make(map[string]string, 0)
-	underscore.Chain(lbs).DistinctBy("UserID").SelectMany(func(lb LineBilling, _ int) map[string]string {
+	underscore.Chain(lbs).DistinctBy("UserID").SelectMany(func(lb modelBot.LineBilling, _ int) map[string]string {
 		dst := make(map[string]string)
-		lineMember, err := botClient.GetGroupMemberProfile(lb.GroupID, lb.UserID).Do()
+		lineMember, err := serviceBot.GetGroupMemberProfile(lb.GroupID, lb.UserID)
 		if err != nil {
 			t.Log("line messaging api get group member profile group id:"+lb.GroupID+" user id:"+lb.UserID+" error:", err)
 			dst[lb.UserID] = "Unkonw"
@@ -124,7 +125,7 @@ func TestGetLineBillingList(t *testing.T) {
 	sb.Grow(len(lbs))
 	for _, lb := range lbs {
 		memberName := "Unknow"
-		amountAvg, amountAvgBase := calculateAmount(testGroupID, helper.ConvertToFloat64(lb.Billing.Amount))
+		amountAvg, amountAvgBase := serviceBot.CalculateAmount(testGroupID, helper.ConvertToFloat64(lb.Billing.Amount))
 		//check line member display name is exist
 		if _, ok := dstByUserID[lb.UserID]; ok {
 			memberName = dstByUserID[lb.UserID]
@@ -139,9 +140,8 @@ func TestGetLineBillingList(t *testing.T) {
 }
 
 func TestGetLineBillingListTemplateText(t *testing.T) {
-	var testGroupID string
-	testGroupID = config.Cfg.GetString("TEST_GET_LINE_BILLING_LIST_GROUP_ID")
-	lb := LineBilling{}
+	testGroupID := config.Cfg.GetString("TEST_GET_LINE_BILLING_LIST_GROUP_ID")
+	lb := modelBot.LineBilling{}
 	where := make(map[string]interface{})
 	where["group_id"] = testGroupID
 	not := make(map[string]interface{})
@@ -158,9 +158,9 @@ func TestGetLineBillingListTemplateText(t *testing.T) {
 	dstByUserID := make(map[string]string, 0)
 	//user id total amount
 	lbUserIDAmount := make(map[string]float64, 0)
-	underscore.Chain(lbs).DistinctBy("UserID").SelectMany(func(lb LineBilling, _ int) map[string]string {
+	underscore.Chain(lbs).DistinctBy("UserID").SelectMany(func(lb modelBot.LineBilling, _ int) map[string]string {
 		dst := make(map[string]string)
-		lineMember, err := botClient.GetGroupMemberProfile(lb.GroupID, lb.UserID).Do()
+		lineMember, err := serviceBot.GetGroupMemberProfile(lb.GroupID, lb.UserID)
 		if err != nil {
 			t.Log("line messaging api get group member profile group id:"+lb.GroupID+" user id:"+lb.UserID+" error:", err)
 			dst[lb.UserID] = "Unkonw"
@@ -173,7 +173,7 @@ func TestGetLineBillingListTemplateText(t *testing.T) {
 	sbList.Grow(len(lbs))
 	for _, lb := range lbs {
 		var memberName string
-		amountAvg, amountAvgBase := calculateAmount(testGroupID, helper.ConvertToFloat64(lb.Billing.Amount))
+		amountAvg, amountAvgBase := serviceBot.CalculateAmount(testGroupID, helper.ConvertToFloat64(lb.Billing.Amount))
 		//check line member display name is exist
 		if _, ok := dstByUserID[lb.UserID]; ok {
 			memberName = dstByUserID[lb.UserID]
@@ -198,7 +198,7 @@ func TestGetLineBillingListTemplateText(t *testing.T) {
 }
 
 func TestPluck(t *testing.T) {
-	lb := LineBilling{}
+	lb := modelBot.LineBilling{}
 	where := make(map[string]interface{})
 	not := make(map[string]interface{})
 	results, err := lb.Get(where, not)
@@ -210,7 +210,7 @@ func TestPluck(t *testing.T) {
 }
 
 func TestPluckSet(t *testing.T) {
-	lb := LineBilling{}
+	lb := modelBot.LineBilling{}
 	where := make(map[string]interface{})
 	not := make(map[string]interface{})
 	results, err := lb.Get(where, not)

@@ -11,8 +11,6 @@ import (
 	"github.com/programzheng/black-key/config"
 	"github.com/programzheng/black-key/internal/filesystem"
 	"github.com/programzheng/black-key/internal/helper"
-	"github.com/programzheng/black-key/internal/model/bot"
-	"github.com/programzheng/black-key/internal/service/billing"
 
 	"github.com/line/line-bot-sdk-go/linebot"
 )
@@ -34,16 +32,16 @@ type LineBotPushMessage struct {
 	Text   string `json:"text"`
 }
 
-var botClient = SetLineBot()
+var BotClient = SetLineBot()
 
 func SetLineBot() *linebot.Client {
 	channelSecret := config.Cfg.GetString("LINE_CHANNEL_SECRET")
 	channelAccessToken := config.Cfg.GetString("LINE_CHANNEL_ACCESS_TOKEN")
-	botClient, err := linebot.New(channelSecret, channelAccessToken)
+	BotClient, err := linebot.New(channelSecret, channelAccessToken)
 	if err != nil {
 		log.Println("LINE bot error:", err)
 	}
-	return botClient
+	return BotClient
 }
 
 func LineReplyMessage(replyToken string, messages interface{}) {
@@ -57,7 +55,7 @@ func LineReplyMessage(replyToken string, messages interface{}) {
 	if helper.ConvertToBool(config.Cfg.GetString("LINE_MESSAGING_DEBUG")) {
 		fmt.Printf("LineReplyMessage:\nreplyToken:%s\nmessages: %v\n", replyToken, helper.GetJSON(messages))
 	}
-	basicResponse, err := botClient.ReplyMessage(replyToken, sendMessages...).Do()
+	basicResponse, err := BotClient.ReplyMessage(replyToken, sendMessages...).Do()
 	if err != nil {
 		log.Println("LINE Message API reply message Request error:", err)
 	}
@@ -65,7 +63,7 @@ func LineReplyMessage(replyToken string, messages interface{}) {
 }
 
 func GetMessageContent(messageId string) (*linebot.MessageContentResponse, error) {
-	return botClient.GetMessageContent(messageId).Do()
+	return BotClient.GetMessageContent(messageId).Do()
 }
 
 func LinePushMessage(toID string, messages interface{}) error {
@@ -79,40 +77,13 @@ func LinePushMessage(toID string, messages interface{}) error {
 	if helper.ConvertToBool(config.Cfg.GetString("LINE_MESSAGING_DEBUG")) {
 		fmt.Printf("LinePushMessage:\ntoID: %s\nmessages: %v\n", toID, helper.GetJSON(messages))
 	}
-	response, err := botClient.PushMessage(toID, sendMessages...).Do()
+	response, err := BotClient.PushMessage(toID, sendMessages...).Do()
 	if err != nil {
 		log.Println("pkg/service/bot/line LinePushMessage Request error:", err)
 		return err
 	}
 	log.Printf("pkg/service/bot/line LinePushMessage response:%v\n", response)
 	return nil
-}
-
-func billingAction(lineId LineID, amount int, title string, note string) (billing.Billing, bot.LineBilling) {
-	b := billing.Billing{
-		Title:  title,
-		Amount: amount,
-		Note:   note,
-	}
-	billing, err := b.Add()
-	if err != nil {
-		log.Fatal("billingAction Billing add error:", err)
-	}
-	lb := bot.LineBilling{
-		BillingID: billing.ID,
-		GroupID:   lineId.GroupID,
-		RoomID:    lineId.RoomID,
-		UserID:    lineId.UserID,
-	}
-	_, err = lb.Add()
-	if err != nil {
-		log.Fatal("billingAction LineBilling add error:", err)
-	}
-	return b, lb
-}
-
-func generateErrorTextMessage() linebot.Message {
-	return linebot.NewTextMessage("系統錯誤，請重新再試或是通知管理員")
 }
 
 func (lineId *LineID) getHashKey() string {

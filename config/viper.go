@@ -44,6 +44,14 @@ func (i *Instance) GetString(name string) string {
 	return i.Package.GetString(name)
 }
 
+func (i *Instance) GetInt(name string) int {
+	return i.Package.GetInt(name)
+}
+
+func (i *Instance) GetBool(name string) bool {
+	return i.Package.GetBool(name)
+}
+
 func (i *Instance) Set(key string, value interface{}) {
 	i.Package.Set(key, value)
 }
