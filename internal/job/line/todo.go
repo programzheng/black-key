@@ -47,6 +47,7 @@ func RunPushLineNotificationSchedule() {
 				if err != nil {
 					log.Printf("pkg/job/line/todo RunPushLineNotificationSchedule LinePushMessage error: %v", err)
 				}
+				logLineNotificationPushLog(pushID, tpm)
 				err = afterPushLineNotification(ln)
 				if err != nil {
 					log.Printf("pkg/job/line/todo RunPushLineNotificationSchedule PermanentlyDelete error: %v", err)
@@ -194,4 +195,8 @@ func getPushID(ln *model.LineNotification) string {
 		return ln.UserID
 	}
 	return ""
+}
+
+func logLineNotificationPushLog(pushID string, tpm map[string]interface{}) {
+	log.Printf("%s %s:%s, %v", helper.GetCurrentGoFilePath(), helper.GetFunctionName(), pushID, helper.GetJSON(tpm))
 }
