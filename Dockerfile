@@ -1,5 +1,5 @@
 FROM golang:alpine as build_base
-RUN apk add bash ca-certificates git gcc g++ libc-dev
+# RUN apk add bash ca-certificates git gcc g++ libc-dev
 
 ARG WORKSPACE
 WORKDIR /$WORKSPACE
