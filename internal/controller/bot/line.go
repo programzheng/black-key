@@ -41,7 +41,7 @@ func LineWebHook(ctx *gin.Context) {
 			"ReplyToken": event.ReplyToken,
 			"Request":    requestString,
 		}); err != nil {
-			helper.Fail(ctx, err)
+			log.Println("LineWebHook create request error:", err)
 			return
 		}
 		lineId := bot.LineID{
