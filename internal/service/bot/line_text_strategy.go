@@ -6,6 +6,7 @@ import (
 	"github.com/line/line-bot-sdk-go/linebot"
 	"github.com/programzheng/black-key/config"
 	"github.com/programzheng/black-key/internal/helper"
+	"github.com/programzheng/black-key/internal/service/proxy"
 )
 
 type TextParsingStrategy interface {
@@ -84,6 +85,16 @@ func (s *TodoStrategy) Execute(lineId LineID, text string) (interface{}, error) 
 	default:
 		return nil, nil
 	}
+}
+
+type ProxyStrategy struct{}
+
+func (s *ProxyStrategy) Execute(lineId LineID, text string) (interface{}, error) {
+	imageUrl := proxy.GetGrpcProxyResponse(nil, text)
+	if imageUrl != "" {
+		return linebot.NewImageMessage(imageUrl, imageUrl), nil
+	}
+	return nil, nil
 }
 
 type DefaultStrategy struct{}

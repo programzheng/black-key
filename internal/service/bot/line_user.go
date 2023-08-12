@@ -26,6 +26,7 @@ func UserParseTextGenTemplate(lineId LineID, text string) (interface{}, error) {
 		&MemberLineAvatarStrategy{},
 		&RockPaperScissorStrategy{},
 		&TodoStrategy{},
+		&ProxyStrategy{},
 		&DefaultStrategy{},
 	}
 

@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+package proxy;
+option go_package = "proto/black-key";
+
+message CreateRelayEventRequest {
+    string identifier = 1;
+    string key = 2;
+}
+
+message CreateRelayEventResponse {
+    string statusCode = 1;
+}
+
+message GetProxyRequest {
+    optional string identifier = 1;
+    string key = 2;
+}
+
+message GetProxyResponse {
+    string statusCode = 1;
+    optional string url = 2;
+}
+
+service Proxy {
+    rpc GetProxy(GetProxyRequest) returns (GetProxyResponse);
+    rpc CreateRelayEvent(CreateRelayEventRequest) returns (CreateRelayEventResponse);
+}

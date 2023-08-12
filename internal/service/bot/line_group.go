@@ -27,6 +27,7 @@ func GroupParseTextGenTemplate(lineId LineID, text string) (interface{}, error) 
 		&GroupMemberLineAvatarStrategy{},
 		&RockPaperScissorStrategy{},
 		&TodoStrategy{},
+		&ProxyStrategy{},
 		&DefaultStrategy{},
 	}
 
