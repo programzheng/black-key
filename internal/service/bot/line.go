@@ -24,6 +24,13 @@ type LineID struct {
 type LinePostBackAction struct {
 	Action string
 	Data   map[string]interface{}
+	Params LinePostBackActionParams
+}
+
+type LinePostBackActionParams struct {
+	Date     string `json:"date,omitempty"`
+	Time     string `json:"time,omitempty"`
+	Datetime string `json:"datetime,omitempty"`
 }
 
 type LineBotPushMessage struct {

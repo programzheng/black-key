@@ -1,12 +1,12 @@
 package bot
 
 import (
-	"encoding/json"
+	"fmt"
+	"time"
 
 	"github.com/line/line-bot-sdk-go/linebot"
 	"github.com/programzheng/black-key/config"
 	"github.com/programzheng/black-key/internal/helper"
-	log "github.com/sirupsen/logrus"
 )
 
 func UserParseTextGenTemplate(lineId LineID, text string) (interface{}, error) {
@@ -44,19 +44,32 @@ func UserParseTextGenTemplate(lineId LineID, text string) (interface{}, error) {
 }
 
 func UserParsePostBackGenTemplate(lineId LineID, postBack *linebot.Postback) (interface{}, error) {
-	data := []byte(postBack.Data)
-	lpba := LinePostBackAction{}
-	err := json.Unmarshal(data, &lpba)
-	if err != nil {
-		log.Fatalf("line user UserParsePostBackGenTemplate json unmarshal error: %v", err)
+	lpba := createLinePostBackActionByDataAndParams([]byte(postBack.Data))
+	if postBack.Params != nil {
+		lpba.Params = LinePostBackActionParams{
+			Date:     postBack.Params.Date,
+			Time:     postBack.Params.Time,
+			Datetime: postBack.Params.Datetime,
+		}
 	}
 
 	switch lpba.Action {
 	case "delete line notification":
-		return deleteTodoByPostBack(&lpba)
+		return deleteTodoByPostBack(lpba)
+	case "結算":
+		return bill(lineId, lpba)
+	case "猜拳":
+		return rockPaperScissorTurn(lpba)
+	case "todo":
+		parsedTime, err := time.Parse("2006-01-02T15:04", lpba.Params.Datetime)
+		if err != nil {
+			return nil, fmt.Errorf("UserParsePostBackGenTemplate Action:todo error: %v", err)
+		}
+		text := fmt.Sprintf("提醒|%s|%s", parsedTime.Format("2006-01-02 15:04:05"), lpba.Data["Text"].(string))
+		return todo(lineId, text)
 	}
 	if helper.ConvertToBool(config.Cfg.GetString("LINE_MESSAGING_DEBUG")) {
-		return linebot.NewTextMessage(string(data)), nil
+		return linebot.NewTextMessage(postBack.Data), nil
 	}
 	return nil, nil
 }

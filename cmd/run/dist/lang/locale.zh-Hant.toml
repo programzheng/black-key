@@ -2,7 +2,9 @@ Test = "測試"
 
 [LINE_Messaging_Todo_Notification_Helper]
 description = "使用提醒輸入的訊息"
-other = """指定每天下午一天範例：
+other = """介面設定時間範例：
+提醒|發出的訊息提醒訊息
+指定每天下午一天範例：
 提醒|每天 13:00:00|每天下午一點會發出訊息
 指定年月日時間範例：
 提醒|2022-01-01 13:00:00|2022年1月1日下午一點會發出訊息"""
@@ -13,3 +15,15 @@ other = """指定每天下午一天範例：
 多提醒|每天 13:00:00|每天下午一點會發出多個文字訊息與圖片的訊息
 指定年月日時間範例：
 多提醒|2022-01-01 13:00:00|2022年1月1日下午一點會發出多個文字訊息與圖片的訊息"""
+
+[LINE_Messaging_Todo_FlexTemplate_Header_Text]
+description = "提醒選擇日期器訊息標題"
+other = "🔔請選擇提醒時間"
+
+[LINE_Messaging_Todo_FlexTemplate_Body_Text]
+description = "提醒選擇日期器訊息提醒文字標題"
+other = "提醒內容："
+
+[LINE_Messaging_Todo_FlexTemplate_DatetimePickerAction_Label]
+description = "提醒選擇日期器訊息提醒按鈕標題"
+other = "設定提醒時間"

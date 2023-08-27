@@ -14,6 +14,16 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+func createLinePostBackActionByDataAndParams(data []byte) *LinePostBackAction {
+	lpba := LinePostBackAction{}
+	err := json.Unmarshal(data, &lpba)
+	if err != nil {
+		log.Fatalf("createLinePostBackActionByData json unmarshal error: %v", err)
+	}
+
+	return &lpba
+}
+
 func deleteTodoByPostBack(lpba *LinePostBackAction) (interface{}, error) {
 	id := uint(lpba.Data["ID"].(float64))
 	ln, err := modelBot.LineNotificationFirstByID(id)

@@ -183,6 +183,13 @@ func todo(lineId LineID, text string) (interface{}, error) {
 	if len(parseText) == 1 {
 		return setTodoHelper(), nil
 	}
+
+	// DatetimePicker flex template
+	if len(parseText) == 2 {
+		replyText := parseText[1]
+		return newTodoFlexTemplate(replyText), nil
+	}
+
 	date := parseText[1]
 	replyText := parseText[2]
 	parseDate := strings.Split(date, " ")
