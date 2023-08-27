@@ -48,7 +48,7 @@ func UserParsePostBackGenTemplate(lineId LineID, postBack *linebot.Postback) (in
 	lpba := LinePostBackAction{}
 	err := json.Unmarshal(data, &lpba)
 	if err != nil {
-		log.Fatalf("line group GroupParsePostBackGenTemplate json unmarshal error: %v", err)
+		log.Fatalf("line user UserParsePostBackGenTemplate json unmarshal error: %v", err)
 	}
 
 	switch lpba.Action {
