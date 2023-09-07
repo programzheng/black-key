@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.2.0
 // - protoc             v3.21.5
-// source: proxy.proto
+// source: proto/proxy.proto
 
 package black_key
 
@@ -137,5 +137,5 @@ var Proxy_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "proxy.proto",
+	Metadata: "proto/proxy.proto",
 }
