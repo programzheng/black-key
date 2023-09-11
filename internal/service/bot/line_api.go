@@ -23,7 +23,7 @@ func GetGroupMemberCount(groupID string) int {
 func GetGroupMemberProfile(groupID string, userID string) (*LineMember, error) {
 	userProfileResponse, err := BotClient.GetGroupMemberProfile(groupID, userID).Do()
 	if err != nil {
-		log.Errorf("line messaging api get group member profile error:", err)
+		log.Errorf("line messaging api get group member profile error:%v", err)
 		return nil, err
 	}
 	lineMember := LineMember(*userProfileResponse)
