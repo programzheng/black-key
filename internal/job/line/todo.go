@@ -41,14 +41,14 @@ func RunPushLineNotificationSchedule() {
 		}
 		for _, tp := range tps {
 			tpm := tp.(map[string]interface{})
-			pushID := getPushID(ln)
+			pushID := getPushID[*model.LineNotification](ln)
 			if pushID != "" {
 				err := bot.LinePushMessage(pushID, convertJSONToLineMessage(tpm))
 				if err != nil {
 					log.Printf("pkg/job/line/todo RunPushLineNotificationSchedule LinePushMessage error: %v", err)
 				}
 				logLineNotificationPushLog(pushID, tpm)
-				err = afterPushLineNotification(ln)
+				err = afterPushLineNotification[*model.LineFeatureNotification](ln)
 				if err != nil {
 					log.Printf("pkg/job/line/todo RunPushLineNotificationSchedule PermanentlyDelete error: %v", err)
 				}
@@ -148,55 +148,41 @@ func checkCanPushLineNotification(ln *model.LineNotification) bool {
 	return minTolerantDateTime.Before(pushDateTime) && maxTolerantDateTime.After(pushDateTime)
 }
 
-func afterPushLineNotification(ln *model.LineNotification) error {
-	var err error
-
-	//Limit < 0 is unlimited
-	if ln.Limit > 0 {
-		ln.Limit -= 1
-		err := ln.Save()
-		if err != nil {
-			return err
-		}
-	}
-
-	// if ln.PushCycle != "specify" && ln.Limit == -1 {
-	// 	//push weekday is next weekday
-	// 	nextDateTime := ln.PushDateTime.AddDate(0, 0, 1)
-	// 	wds := nextDateTime.Weekday().String()
-	// 	weekDayCycle := strings.Split(ln.PushCycle, ",")
-	// 	if slices.Contains(weekDayCycle, wds) {
-	// 		ln.PushDateTime = nextDateTime
-	// 		err := ln.Save()
-	// 		if err != nil {
-	// 			return err
-	// 		}
-	// 	}
-	// }
-
-	if ln.Limit == 0 {
-		err = ln.Delete()
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-func getPushID(ln *model.LineNotification) string {
-	if ln.RoomID != "" {
-		return ln.RoomID
-	}
-	if ln.GroupID != "" {
-		return ln.GroupID
-	}
-	if ln.UserID != "" {
-		return ln.UserID
-	}
-	return ""
-}
-
 func logLineNotificationPushLog(pushID string, tpm map[string]interface{}) {
 	log.Printf("%s %s:%s, %v", helper.GetCurrentGoFilePath(), helper.GetFunctionName(), pushID, helper.GetJSON(tpm))
+}
+
+func RunPushLineFeatureNotificationSchedule() {
+	//get line feature notifications from database
+	lfn := &model.LineFeatureNotification{}
+	lfns, err := lfn.Get(nil, nil)
+	if err != nil {
+		log.Printf("pkg/job/line/todo RunPushLineFeatureNotificationSchedule Get error: %v", err)
+	}
+	runPushLineFeatureNotification(lfns)
+}
+
+func runPushLineFeatureNotification(lfns []*model.LineFeatureNotification) {
+	for _, lfn := range lfns {
+		canPush := checkCanPushLineFeatureNotification(lfn)
+		if !canPush {
+			continue
+		}
+		tps, err := bot.GetFlexMessageByLineFeatureNotification(lfn)
+		if err != nil {
+			log.Printf("pkg/job/line/todo GetFlexMessageByLineFeatureNotification error: %v", err)
+			continue
+		}
+		pushID := getPushID[*model.LineFeatureNotification](lfn)
+		if pushID != "" {
+			err := bot.LinePushMessage(pushID, tps)
+			if err != nil {
+				log.Printf("pkg/job/line/todo RunPushLineNotificationSchedule LinePushMessage error: %v", err)
+			}
+			err = afterPushLineNotification[*model.LineFeatureNotification](lfn)
+			if err != nil {
+				log.Printf("pkg/job/line/todo RunPushLineNotificationSchedule PermanentlyDelete error: %v", err)
+			}
+		}
+	}
 }

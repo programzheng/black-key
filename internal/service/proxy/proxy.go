@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/programzheng/black-key/config"
-	pb "github.com/programzheng/black-key/pkg/proto"
+	pb "github.com/programzheng/black-key/pkg/proto/proxy"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"

@@ -84,12 +84,20 @@ func LinePushMessage(toID string, messages interface{}) error {
 	if helper.ConvertToBool(config.Cfg.GetString("LINE_MESSAGING_DEBUG")) {
 		fmt.Printf("LinePushMessage:\ntoID: %s\nmessages: %v\n", toID, helper.GetJSON(messages))
 	}
-	response, err := BotClient.PushMessage(toID, sendMessages...).Do()
-	if err != nil {
-		log.Println("pkg/service/bot/line LinePushMessage Request error:", err)
-		return err
+	chunkSize := 5
+	for i := 0; i < len(sendMessages); i += chunkSize {
+		end := i + chunkSize
+		if end > len(sendMessages) {
+			end = len(sendMessages)
+		}
+		response, err := BotClient.PushMessage(toID, sendMessages[i:end]...).Do()
+		if err != nil {
+			log.Println("pkg/service/bot/line LinePushMessage Request error:", err)
+			return err
+		}
+		log.Printf("pkg/service/bot/line LinePushMessage response:%v\n", response)
 	}
-	log.Printf("pkg/service/bot/line LinePushMessage response:%v\n", response)
+
 	return nil
 }
 
