@@ -6,7 +6,7 @@ CREATE TABLE `line_feature_notifications` (
   `updated_at` datetime DEFAULT NULL,
   `deleted_at` datetime DEFAULT NULL,
   `feature` ENUM('new_rent_homes') NOT NULL COMMENT '功能',
-  `push_cycle` ENUM('specify') NOT NULL COMMENT '發送週期',
+  `push_cycle` varchar(255) NOT NULL COMMENT '發送週期',
   `push_date_time` datetime DEFAULT NULL COMMENT '發送時間',
   `limit` int DEFAULT -1 COMMENT '限制次數',
   `group_id` varchar(255) NOT NULL COMMENT '群組ID',
