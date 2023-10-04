@@ -107,6 +107,23 @@ func newTodoFlexTemplate(text string) *linebot.FlexMessage {
 }
 
 func NewNewRentHousesFlexTemplate(altText string, rhs []*rent_house.RentHouse) []linebot.SendingMessage {
+	if len(rhs) == 0 {
+		return []linebot.SendingMessage{
+			linebot.NewFlexMessage("目前無新上架租屋", &linebot.BubbleContainer{
+				Type: linebot.FlexContainerTypeBubble,
+				Header: &linebot.BoxComponent{
+					Type:   linebot.FlexComponentTypeBox,
+					Layout: linebot.FlexBoxLayoutTypeBaseline,
+					Contents: []linebot.FlexComponent{
+						&linebot.TextComponent{
+							Text: "目前無新上架租屋",
+						},
+					},
+				},
+			}),
+		}
+	}
+
 	fms := []linebot.SendingMessage{}
 
 	altTitle := fmt.Sprintf("%s新上架租屋通知", altText)

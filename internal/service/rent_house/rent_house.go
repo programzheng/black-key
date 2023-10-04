@@ -93,6 +93,10 @@ func GetGetRentHousesConditionsByJSONString(jsonString string) (*GetRentHousesCo
 }
 
 func ConvertGetRentHousesResponseToRentHouses(grhr *pb.GetRentHousesResponse) ([]*RentHouse, error) {
+	if len(grhr.RentHouses) == 0 {
+		return nil, nil
+	}
+
 	rhs := make([]*RentHouse, 0, len(grhr.RentHouses))
 	for _, rrh := range grhr.RentHouses {
 		rhs = append(rhs, &RentHouse{
