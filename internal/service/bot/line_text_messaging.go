@@ -472,9 +472,14 @@ func getLineBillingTotalAmount(lineId LineID, lbs []bot.LineBilling, dstByUserID
 	}
 	text := "總付款金額：\n"
 	sbTotal.WriteString(text)
+	count := 0
 	for userID, name := range dstByUserID {
-		text = fmt.Sprintf("%v: *%v*\n", name, helper.ConvertToString(lbUserIDAmount[userID]))
+		text = fmt.Sprintf("%v: *%v*", name, helper.ConvertToString(lbUserIDAmount[userID]))
+		if len(dstByUserID)-1 > count {
+			text = text + "\n"
+		}
 		sbTotal.WriteString(text)
+		count++
 	}
 	return string(sbTotal.String())
 }
