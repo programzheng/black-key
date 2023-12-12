@@ -118,7 +118,7 @@ func GetRentHousesByConditionsResponse(conditions *GetRentHousesConditions) (*pb
 	}
 	conn, err := grpc.Dial(grpcRentHouseUrl, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
-		log.Fatalf("did not connect: %v", err)
+		log.Printf("did not connect: %v", err)
 	}
 	defer conn.Close()
 
@@ -131,7 +131,7 @@ func GetRentHousesByConditionsResponse(conditions *GetRentHousesConditions) (*pb
 	}
 	r, err := c.GetRentHousesByConditions(ctx, req)
 	if err != nil {
-		log.Fatalf("could not get proxy response: %v", err)
+		log.Printf("could not get proxy response: %v", err)
 	}
 	return r, nil
 }
